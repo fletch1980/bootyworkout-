@@ -1,404 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bubble Butt Builder</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #1a0a2e; color: #fff; min-height: 100vh; }
-  
-  header { background: linear-gradient(135deg, #ff6b9d, #c44dff, #ff6b9d); padding: 20px; text-align: center; }
-  header h1 { font-size: 1.8em; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-  header p { font-size: 0.85em; opacity: 0.9; margin-top: 4px; }
-
-  .tabs { display: flex; background: #2d1052; overflow-x: auto; }
-  .tab { flex: 1; padding: 12px 8px; text-align: center; font-size: 0.75em; font-weight: 700; cursor: pointer; border-bottom: 3px solid transparent; color: #a78bca; white-space: nowrap; min-width: 80px; transition: all 0.2s; }
-  .tab.active { color: #ff6b9d; border-bottom-color: #ff6b9d; background: #3a1468; }
-
-  .day-panel { display: none; padding: 16px; }
-  .day-panel.active { display: block; }
-
-  .day-title { font-size: 1.1em; font-weight: 800; color: #ff6b9d; margin-bottom: 4px; }
-  .day-subtitle { font-size: 0.78em; color: #c4a8e0; margin-bottom: 16px; }
-
-  .exercise { background: #2d1052; border-radius: 14px; margin-bottom: 12px; overflow: hidden; border: 1.5px solid #4a1f8a; transition: border-color 0.2s; }
-  .exercise.done { border-color: #ff6b9d; background: #3d1560; }
-
-  .ex-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-  .ex-name { font-weight: 700; font-size: 0.95em; }
-  .ex-sets { font-size: 0.75em; color: #c4a8e0; margin-top: 2px; }
-  .ex-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c44dff; display: flex; align-items: center; justify-content: center; font-size: 1em; flex-shrink: 0; cursor: pointer; transition: all 0.2s; }
-  .ex-check.checked { background: #ff6b9d; border-color: #ff6b9d; }
-
-  .ex-detail { display: none; padding: 0 16px 16px; }
-  .ex-detail.open { display: block; }
-
-  /* CSS Animation demos */
-  .anim-box { background: #1a0a2e; border-radius: 10px; height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; position: relative; overflow: hidden; }
-  .stick { position: relative; }
-
-  /* Hip Thrust */
-  .hipthrust-body { width: 60px; height: 14px; background: #ff6b9d; border-radius: 7px; transform-origin: left center; animation: hipthrust 1.8s ease-in-out infinite; }
-  @keyframes hipthrust { 0%,100%{transform:rotate(30deg) translateY(10px)} 50%{transform:rotate(-10deg) translateY(-10px)} }
-  .hipthrust-legs { width: 40px; height: 12px; background: #c44dff; border-radius: 6px; position: absolute; bottom: 20px; right: -10px; transform-origin: right center; animation: hipthrustleg 1.8s ease-in-out infinite; }
-  @keyframes hipthrustleg { 0%,100%{transform:rotate(60deg)} 50%{transform:rotate(30deg)} }
-
-  /* Squat */
-  .squat-body { width: 14px; height: 40px; background: #ff6b9d; border-radius: 7px; animation: squatbody 1.8s ease-in-out infinite; }
-  @keyframes squatbody { 0%,100%{height:40px;transform:translateY(0)} 50%{height:28px;transform:translateY(12px)} }
-  .squat-legs { display: flex; gap: 6px; margin-top: 4px; }
-  .squat-leg { width: 10px; height: 24px; background: #c44dff; border-radius: 5px; animation: squatleg 1.8s ease-in-out infinite; }
-  @keyframes squatleg { 0%,100%{height:24px} 50%{height:16px} }
-
-  /* Kickback */
-  .kick-body { width: 50px; height: 12px; background: #ff6b9d; border-radius: 6px; }
-  .kick-leg { width: 35px; height: 10px; background: #c44dff; border-radius: 5px; margin-top: 6px; transform-origin: left center; animation: kickback 1.5s ease-in-out infinite; }
-  @keyframes kickback { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(-40deg) translateY(-5px)} }
-
-  /* RDL */
-  .rdl-body { width: 50px; height: 12px; background: #ff6b9d; border-radius: 6px; transform-origin: right center; animation: rdl 2s ease-in-out infinite; }
-  @keyframes rdl { 0%,100%{transform:rotate(-80deg)} 50%{transform:rotate(0deg)} }
-  .rdl-legs { width: 12px; height: 38px; background: #c44dff; border-radius: 6px; margin-top: -5px; }
-
-  /* Lunge */
-  .lunge-front { width: 12px; height: 30px; background: #ff6b9d; border-radius: 6px; animation: lungefront 1.8s ease-in-out infinite; }
-  @keyframes lungefront { 0%,100%{transform:translateX(0) rotate(0)} 50%{transform:translateX(14px) rotate(5deg)} }
-  .lunge-back { width: 12px; height: 30px; background: #c44dff; border-radius: 6px; animation: lungeback 1.8s ease-in-out infinite; margin-left: 10px; }
-  @keyframes lungeback { 0%,100%{transform:translateX(0)} 50%{transform:translateX(-10px) rotate(-10deg)} }
-
-  /* Abduction */
-  .abduct-body { width: 12px; height: 35px; background: #ff6b9d; border-radius: 6px; }
-  .abduct-leg { width: 30px; height: 10px; background: #c44dff; border-radius: 5px; margin-top: 4px; transform-origin: left center; animation: abduct 1.6s ease-in-out infinite; }
-  @keyframes abduct { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(-25deg)} }
-
-  /* Bridge */
-  .bridge-body { width: 55px; height: 12px; background: #ff6b9d; border-radius: 6px; animation: bridge 1.8s ease-in-out infinite; }
-  @keyframes bridge { 0%,100%{transform:translateY(12px) rotate(5deg)} 50%{transform:translateY(-5px) rotate(-5deg)} }
-
-  .how-to { background: #1a0a2e; border-radius: 8px; padding: 12px 14px; }
-  .how-to h4 { font-size: 0.78em; color: #ff6b9d; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; }
-  .how-to ol { padding-left: 16px; }
-  .how-to li { font-size: 0.8em; color: #d4b8f0; line-height: 1.5; margin-bottom: 5px; }
-
-  .tip-box { background: linear-gradient(135deg, #3d1560, #2d1052); border-left: 3px solid #ff6b9d; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; font-size: 0.8em; color: #e0c8ff; }
-  .tip-box strong { color: #ff6b9d; }
-
-  .toggle-btn { background: #3d1560; border: 1px solid #c44dff; color: #e0c8ff; border-radius: 8px; padding: 7px 14px; font-size: 0.75em; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; }
-
-  .progress-bar { height: 6px; background: #2d1052; border-radius: 3px; margin: 16px 0 8px; overflow: hidden; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, #ff6b9d, #c44dff); border-radius: 3px; transition: width 0.4s; }
-  .progress-text { font-size: 0.75em; color: #c4a8e0; text-align: center; margin-bottom: 16px; }
-
-  .week-badge { background: linear-gradient(135deg, #ff6b9d, #c44dff); color: white; font-size: 0.7em; font-weight: 800; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bubble Butt Builder</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #0a0010; font-family: system-ui, sans-serif; }</style>
 </head>
 <body>
+<div id="root"></div>
+<script type="text/babel">
+var useState = React.useState;
+var phaseLabels = ["Weeks 1-4","Weeks 5-8","Weeks 9-12"];
 
-<header>
-  <h1>🍑 BUBBLE BUTT BUILDER</h1>
-  <p>Glute Growth Program · Post-Bypass Safe · Tap to check off exercises</p>
-</header>
+var mondayExercises = [
+  {
+    name: "Barbell Hip Thrust", area: "Glutes — Primary", emoji: "🏋️",
+    weights: ["45 lb bar", "65–75 lb bar", "85–95 lb bar"],
+    sets: "4 sets × 10–12 reps",
+    notes: "Upper back on bench, bar across hips with pad. Drive through heels, squeeze hard at top.",
+    tip: "Hold 1 full second at the top — that squeeze is where the growth happens",
+    howto: ["Upper back rests on the bench, bar sits across your hips with the pad", "Feet flat on floor, hip-width apart, knees bent about 90°", "Drive through your heels and thrust hips up toward the ceiling", "Squeeze your glutes HARD at the top — hold for 1 second", "Lower slowly — 3 counts down — don't crash the weight", "Keep your chin tucked, don't hyperextend your lower back"]
+  },
+  {
+    name: "Romanian Deadlift", area: "Hamstrings & Glutes", emoji: "🏋️",
+    weights: ["20–25 lb dumbbells", "30–35 lb dumbbells", "40–50 lb dumbbells"],
+    sets: "3 sets × 10–12 reps",
+    notes: "Hinge at hips, push butt back. Feel the hamstring stretch at the bottom.",
+    tip: "Think: close the car door with your butt on the way back up",
+    howto: ["Stand holding dumbbells in front of your thighs, slight knee bend", "Hinge at the HIPS — push your butt backward, not downward", "Lower the weights along your legs until you feel a strong hamstring stretch", "Keep your back flat the entire time — no rounding", "Squeeze your glutes and drive hips forward to return to standing", "The stretch at the bottom is where the magic happens — don't rush through it"]
+  },
+  {
+    name: "Sumo Goblet Squat", area: "Inner Thighs & Glutes", emoji: "🦵",
+    weights: ["15–20 lb dumbbell", "25–30 lb dumbbell", "35–40 lb dumbbell"],
+    sets: "3 sets × 12–15 reps",
+    notes: "Wide stance, toes out 45°. Sit DOWN between your legs — not back.",
+    tip: "Press your knees out with your elbows at the bottom for a deeper stretch",
+    howto: ["Stand with feet wider than shoulder-width, toes pointed out about 45°", "Hold one dumbbell vertically at your chest with both hands", "Sit DOWN between your legs — this is different from a regular squat", "Keep your chest tall and your knees tracking over your toes", "At the bottom, use your elbows to press your knees out wider", "Drive through your heels to stand, squeezing glutes at the top"]
+  },
+  {
+    name: "Cable Kickback", area: "Glutes — Isolation", emoji: "🦶",
+    weights: ["15–20 lb", "20–25 lb", "25–35 lb"],
+    sets: "3 sets × 15 reps each leg",
+    notes: "Ankle strap on cable machine. Kick straight back — don't rotate your hip.",
+    tip: "Slight forward lean and PAUSE at the top — the pause is everything",
+    howto: ["Attach ankle strap to cable machine at low setting", "Face the machine, hold the bar for balance, slight forward lean", "Keep your core tight and your working leg slightly bent", "Kick your leg STRAIGHT back — not out to the side", "Squeeze your glute hard at the top and hold for 1 second", "Lower slowly — resist the cable on the way back down", "Complete all reps one leg, then switch"]
+  },
+  {
+    name: "Seated Abduction Machine", area: "Glute Medius — Outer", emoji: "↔️",
+    weights: ["Light-moderate", "Moderate", "Moderate-heavy"],
+    sets: "3 sets × 20 reps",
+    notes: "Pads on outside of knees. Push OUT and hold. Lean forward slightly for more glute.",
+    tip: "Leaning slightly forward shifts the work from your TFL to your glute medius",
+    howto: ["Sit upright in the abduction machine, pads against outside of knees", "Feet flat on the platform, core engaged", "Push your legs OUT against the pads — slow and controlled", "Hold the open position for 2 full seconds", "Squeeze your outer glutes the entire time", "Return slowly — don't let the weight crash back", "For more glute activation: lean your torso slightly forward"]
+  }
+];
 
-<div class="tabs" id="tabs">
-  <div class="tab active" onclick="showDay(0)">MON</div>
-  <div class="tab" onclick="showDay(1)">WED</div>
-  <div class="tab" onclick="showDay(2)">FRI</div>
-  <div class="tab" onclick="showDay(3)">WARM UP</div>
-  <div class="tab" onclick="showDay(4)">TIPS</div>
-</div>
+var wednesdayExercises = [
+  {
+    name: "Bulgarian Split Squat", area: "Glutes & Quads", emoji: "🦵",
+    weights: ["10–15 lb dumbbells", "20–25 lb dumbbells", "25–35 lb dumbbells"],
+    sets: "3 sets × 10 reps each leg",
+    notes: "Back foot elevated on bench. Drive through FRONT heel — feel it in your glute.",
+    tip: "The further your front foot is from the bench, the more glute activation",
+    howto: ["Stand in front of a bench, reach one foot back and rest it on top", "Your front foot should be far enough forward that your knee stays over your ankle", "Lower your back knee toward the floor — control the descent", "Drive through your FRONT heel to push yourself back up", "You should feel this almost entirely in your front glute and quad", "Do all reps on one leg, then switch — your weaker side will be obvious"]
+  },
+  {
+    name: "Hip Thrust — Pause Reps", area: "Glutes — Time Under Tension", emoji: "🏋️",
+    weights: ["35–45 lb bar", "55–65 lb bar", "70–80 lb bar"],
+    sets: "4 sets × 8 reps",
+    notes: "Same as Monday but hold 3 full seconds at the top. Less weight, more burn.",
+    tip: "3 seconds feels like forever — count out loud if you have to",
+    howto: ["Set up exactly like Monday hip thrust", "Use slightly less weight than Monday to account for the holds", "Drive up and squeeze at the top", "COUNT: one thousand one, one thousand two, one thousand three", "Only then lower slowly back down", "8 reps with 3-second holds beats 12 reps with no holds for growth"]
+  },
+  {
+    name: "Walking Lunges", area: "Glutes, Quads & Hip Flexors", emoji: "🚶",
+    weights: ["10–15 lb dumbbells", "15–20 lb dumbbells", "20–25 lb dumbbells"],
+    sets: "3 sets × 12 reps each leg",
+    notes: "Step forward, back knee near floor. Drive through front heel to step into next lunge.",
+    tip: "The deeper the lunge, the more glute activation — work toward full range over time",
+    howto: ["Stand tall holding dumbbells at your sides", "Step forward with one foot into a deep lunge", "Lower your back knee close to (but not touching) the floor", "Drive through your FRONT heel to bring your back foot forward", "Step directly into the next lunge — keep walking forward", "Stay tall — don't let your torso lean forward as you fatigue"]
+  },
+  {
+    name: "Banded Glute Bridge", area: "Glutes & Abductors", emoji: "🟣",
+    weights: ["Light band", "Medium band", "Heavy band"],
+    sets: "3 sets × 20 reps",
+    notes: "Band just above knees. Press knees OUT against band the entire time.",
+    tip: "The band forces your glute medius to work while your glute max drives the bridge",
+    howto: ["Lie on your back, knees bent, feet flat on floor hip-width apart", "Place resistance band just above your knees", "Press your knees OUT against the band — maintain this outward pressure throughout", "Drive your hips up toward the ceiling, squeezing glutes hard", "Hold at the top for 1–2 seconds", "Lower slowly without letting the knees cave inward", "Feel both the inner and outer glutes working simultaneously"]
+  }
+];
 
-<div id="panels">
+var fridayExercises = [
+  {
+    name: "Goblet Squat", area: "Quads & Glutes — High Rep", emoji: "🦵",
+    weights: ["15 lb dumbbell", "20 lb dumbbell", "25 lb dumbbell"],
+    sets: "4 sets × 15 reps",
+    notes: "Higher reps today. Feel the burn — this is your metabolic finisher day.",
+    tip: "On the last 3 reps of each set, pause for 2 seconds at the bottom",
+    howto: ["Hold dumbbell at chest, feet shoulder-width or slightly wider", "Squat as deep as comfortable — ideally hips below parallel", "Push knees outward as you descend", "At the bottom, hold briefly — feel your glutes loaded", "Drive through your full foot to stand", "Squeeze glutes at the top before the next rep"]
+  },
+  {
+    name: "Side-Lying Clamshell", area: "Glute Medius — Outer Round", emoji: "↔️",
+    weights: ["Light band", "Medium band", "Heavy band"],
+    sets: "3 sets × 20 reps each side",
+    notes: "Band above knees, feet together. Open top knee up — don't let pelvis rock.",
+    tip: "This targets the side roundness — don't skip it just because it feels easy",
+    howto: ["Lie on your side with a band above your knees", "Hips stacked, knees bent about 45°, feet together", "Keep your feet together and rotate your top knee upward like a clamshell opening", "Don't let your pelvis roll backward — that's cheating", "Hold open for 2 seconds — squeeze the outer glute", "Lower slowly back to start", "Do all reps on one side, then flip and repeat"]
+  },
+  {
+    name: "Donkey Kick", area: "Glutes — Isolation & Burn", emoji: "🦶",
+    weights: ["Bodyweight", "5 lb ankle weight", "8–10 lb ankle weight"],
+    sets: "3 sets × 15 reps each leg",
+    notes: "On all fours. Kick UP toward ceiling — sole faces up. Squeeze and hold.",
+    tip: "Slow is more effective than fast — this is about squeeze, not speed",
+    howto: ["Start on all fours — wrists directly under shoulders, knees under hips", "Keep your knee bent at 90° throughout the movement", "Kick one leg UP toward the ceiling — sole of foot faces the ceiling at the top", "Squeeze your glute HARD at the top and hold for 1–2 seconds", "Keep your hips square — don't rotate to get more range", "Lower slowly and repeat — no resting between reps", "Complete all reps on one leg, then switch"]
+  },
+  {
+    name: "Single-Leg Glute Bridge", area: "Glutes — Unilateral Finisher", emoji: "🏋️",
+    weights: ["Bodyweight", "Bodyweight + 10 lb plate", "Bodyweight + 15–20 lb plate"],
+    sets: "3 sets × 12 reps each leg",
+    notes: "One foot flat, other leg extended. Drive through planted heel — don't let hips tilt.",
+    tip: "This is the finisher — go until you feel the full burn in each glute",
+    howto: ["Lie on your back, one foot flat on floor, other leg extended straight up", "Keep your extended leg at about 45° — don't let it drop too low", "Drive through your planted heel to lift your hips", "Squeeze the working glute as hard as you can at the top", "Keep your hips level — don't let the unsupported side drop", "Lower slowly, repeat, then switch legs", "You should feel a significant burn by rep 10 — that's the goal"]
+  }
+];
 
-<!-- MONDAY -->
-<div class="day-panel active" id="day0">
-  <div class="week-badge">HEAVY DAY · MONDAY</div>
-  <div class="day-title">🔥 Power Glute Session</div>
-  <div class="day-subtitle">Focus: Maximum muscle activation · Rest 2–3 min between sets</div>
+var warmupExercises = [
+  {
+    name: "Banded Lateral Walk", area: "Glute Medius Activation", emoji: "🟣",
+    weights: ["Light band", "Light-medium band", "Medium band"],
+    sets: "2 sets × 15 steps each direction",
+    notes: "Band above knees, slight squat position. Keep tension on band the whole time.",
+    tip: "Don't let feet come together fully — constant tension = constant activation",
+    howto: ["Place band just above your knees", "Stand in a slight squat position — stay low throughout", "Step sideways maintaining band tension — don't let feet come fully together", "15 steps to the right, then 15 steps back to the left = 1 set", "Keep your torso upright and core engaged", "This directly activates the glute medius before your workout"]
+  },
+  {
+    name: "Bodyweight Glute Bridge", area: "Glute Max Activation", emoji: "🦵",
+    weights: ["Bodyweight", "Bodyweight", "Bodyweight + light band"],
+    sets: "2 sets × 15 reps",
+    notes: "Focus on FEELING your glutes work. This is activation — not a workout.",
+    tip: "Touch your glutes before the set — this neural cue increases activation",
+    howto: ["Lie on your back, feet flat, knees bent", "Before starting: reach back and touch your glutes to create a neural cue", "Drive your hips up and SQUEEZE your glutes hard at the top", "Hold for 2 full seconds — really feel the contraction", "Lower slowly and repeat", "If you feel this more in your hamstrings than glutes, bring feet slightly closer to your body"]
+  },
+  {
+    name: "Banded Clamshell", area: "Glute Medius Activation", emoji: "↔️",
+    weights: ["Light band", "Light band", "Light-medium band"],
+    sets: "2 sets × 15 reps each side",
+    notes: "Side-lying, feet together. Open knee up — pelvis stays completely still.",
+    tip: "Only the knee moves — if your hip rocks, the band is too heavy",
+    howto: ["Lie on your side with band above knees", "Hips stacked, knees bent 45°, feet together", "Keep your pelvis absolutely still", "Rotate your top knee upward — feet stay together", "Hold open for 1–2 seconds at the top", "Lower slowly, repeat all reps, then switch sides"]
+  },
+  {
+    name: "Hip Circle", area: "Hip Joint Warm-Up", emoji: "🦶",
+    weights: ["Bodyweight", "Bodyweight", "Bodyweight"],
+    sets: "10 circles each direction, each leg",
+    notes: "On all fours, draw big circles with one knee. Move slowly and with full range.",
+    tip: "The bigger and slower, the better — you're lubricating the joint",
+    howto: ["Start on all fours, wrists under shoulders, knees under hips", "Bring one knee up and out to the side", "Draw a large slow circle with that knee — forward, up, back, down", "Make the circle as big as comfortable", "10 circles forward, 10 circles backward, then switch legs", "This is especially important for joint health post-bypass"]
+  }
+];
 
-  <div class="progress-bar"><div class="progress-fill" id="prog0" style="width:0%"></div></div>
-  <div class="progress-text" id="ptxt0">0 of 5 exercises done</div>
+var days = [
+  { label: "MON", title: "🔥 Power Day", sub: "Heavy compound lifts · Rest 2–3 min between sets", exercises: mondayExercises },
+  { label: "WED", title: "💜 Shape Day", sub: "Mind-muscle focus · Rest 90 sec between sets", exercises: wednesdayExercises },
+  { label: "FRI", title: "🔥 Burnout Day", sub: "High reps · Rest 60 sec between sets", exercises: fridayExercises },
+  { label: "WARM UP", title: "🌡️ Activation", sub: "Do before EVERY session · 8–10 minutes", exercises: warmupExercises }
+];
 
-  <!-- Hip Thrust -->
-  <div class="exercise" id="ex-0-0">
-    <div class="ex-header" onclick="toggleDetail('det-0-0')">
-      <div>
-        <div class="ex-name">🏋️ Barbell Hip Thrust</div>
-        <div class="ex-sets">4 sets × 10–12 reps · Start: 45 lb bar</div>
-      </div>
-      <div class="ex-check" id="chk-0-0" onclick="checkEx(event,'0-0',0,5)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-0-0">
-      <div class="anim-box">
-        <div style="position:relative;display:flex;flex-direction:column;align-items:center">
-          <div class="hipthrust-body"></div>
-          <div class="hipthrust-legs"></div>
-        </div>
-      </div>
-      <div class="how-to">
-        <h4>How To</h4>
-        <ol>
-          <li>Sit on floor, upper back against bench, bar across hips with pad</li>
-          <li>Feet flat, hip-width apart, knees bent ~90°</li>
-          <li>Drive through heels — squeeze glutes HARD at the top</li>
-          <li>Hold 1 second at top, lower slowly (3 counts down)</li>
-          <li>Keep chin tucked — don't arch your lower back</li>
-        </ol>
-      </div>
-      <button class="toggle-btn" onclick="checkEx(event,'0-0',0,5)">✅ Mark Done</button>
-    </div>
-  </div>
+var tips = [
+  { emoji: "🍑", title: "Progressive Overload", body: "Every 1–2 weeks, add 5 lbs OR 2 reps. Your glutes need to be challenged to grow — same weight every week = no growth." },
+  { emoji: "💊", title: "Post-Bypass Protein", body: "60–80g daily minimum. Prioritize protein at every meal. Muscles cannot grow without adequate protein — this is non-negotiable." },
+  { emoji: "🧠", title: "Mind-Muscle Connection", body: "Before every set, touch your glutes and consciously squeeze them. This neural cue alone increases activation by 20–30%." },
+  { emoji: "💤", title: "Sleep = Growth", body: "Glutes grow while you sleep, not in the gym. 7–8 hours of sleep is part of your program — not optional." },
+  { emoji: "🩺", title: "Post-Bypass Note", body: "Start lighter than you think you need to. Joints and connective tissue need 4–6 weeks to adapt even when cardio feels easy. Increase weight gradually." },
+  { emoji: "⏱", title: "12-Week Timeline", body: "Weeks 1–4: Learn the movements. Weeks 5–8: Add weight, feel difference. Weeks 9–12: Visible shape change. Commit to the full program." }
+];
 
-  <!-- Romanian Deadlift -->
-  <div class="exercise" id="ex-0-1">
-    <div class="ex-header" onclick="toggleDetail('det-0-1')">
-      <div>
-        <div class="ex-name">🏋️ Romanian Deadlift</div>
-        <div class="ex-sets">3 sets × 10–12 reps · Start: 20–30 lb dumbbells</div>
-      </div>
-      <div class="ex-check" id="chk-0-1" onclick="checkEx(event,'0-1',0,5)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-0-1">
-      <div class="anim-box">
-        <div style="position:relative;display:flex;flex-direction:column;align-items:center">
-          <div class="rdl-body"></div>
-          <div class="rdl-legs"></div>
-        </div>
-      </div>
-      <div class="how-to">
-        <h4>How To</h4>
-        <ol>
-          <li>Stand holding dumbbells in front of thighs, slight knee bend</li>
-          <li>Hinge at the HIPS — push your butt back, not down</li>
-          <li>Lower weights along your legs until you feel hamstring stretch</li>
-          <li>Squeeze glutes to drive hips forward and return to standing</li>
-          <li>Think "close the car door with your butt"</li>
-        </ol>
-      </div>
-      <button class="toggle-btn" onclick="checkEx(event,'0-1',0,5)">✅ Mark Done</button>
-    </div>
-  </div>
+function ExerciseCard(props) {
+  var ex = props.ex; var phase = props.phase; var checkKey = props.checkKey; var expandKey = props.expandKey;
+  var isDone = props.isDone; var isExpanded = props.isExpanded;
+  var onCheck = props.onCheck; var onExpand = props.onExpand;
 
-  <!-- Sumo Squat -->
-  <div class="exercise" id="ex-0-2">
-    <div class="ex-header" onclick="toggleDetail('det-0-2')">
-      <div>
-        <div class="ex-name">🦵 Sumo Goblet Squat</div>
-        <div class="ex-sets">3 sets × 12–15 reps · Start: 15–20 lb dumbbell</div>
-      </div>
-      <div class="ex-check" id="chk-0-2" onclick="checkEx(event,'0-2',0,5)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-0-2">
-      <div class="anim-box">
-        <div style="display:flex;flex-direction:column;align-items:center">
-          <div class="squat-body"></div>
-          <div class="squat-legs"><div class="squat-leg"></div><div class="squat-leg"></div></div>
-        </div>
-      </div>
-      <div class="how-to">
-        <h4>How To</h4>
-        <ol>
-          <li>Wide stance, toes pointed out 45°, hold dumbbell at chest</li>
-          <li>Sit DOWN between your legs — not back like a regular squat</li>
-          <li>Knees track over toes the whole way down</li>
-          <li>Drive through heels to stand — squeeze inner thighs and glutes</li>
-          <li>Go as deep as comfortable for your hips</li>
-        </ol>
-      </div>
-      <button class="toggle-btn" onclick="checkEx(event,'0-2',0,5)">✅ Mark Done</button>
-    </div>
-  </div>
+  return React.createElement("div", { style: { background: isDone ? "#0f1f0f" : "#1a0030", border: "2px solid " + (isDone ? "#166534" : "#3b0764"), borderRadius: 12, padding: "14px 16px", marginBottom: 12 } },
+    React.createElement("div", { onClick: onCheck, style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, cursor: "pointer" } },
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
+        React.createElement("span", { style: { fontSize: 20 } }, ex.emoji),
+        React.createElement("div", null,
+          React.createElement("div", { style: { fontWeight: 700, fontSize: 14, color: isDone ? "#4ade80" : "white" } }, (isDone ? "✅ " : "") + ex.name),
+          React.createElement("div", { style: { fontSize: 11, color: "#7c3aed", fontWeight: 600, marginTop: 2 } }, ex.area)
+        )
+      ),
+      React.createElement("div", { style: { fontSize: 11, color: "#6b7280", textAlign: "right" } },
+        ex.sets, React.createElement("br"),
+        React.createElement("span", { style: { color: "#c084fc", fontWeight: 700 } }, ex.weights[phase])
+      )
+    ),
+    React.createElement("div", { style: { fontSize: 12, color: "#9ca3af", lineHeight: 1.5, marginBottom: 8 } }, ex.notes),
+    React.createElement("div", { style: { background: "#0a0010", borderRadius: 8, padding: "6px 10px", fontSize: 11, color: "#c084fc", fontStyle: "italic", marginBottom: 10 } }, "💡 " + ex.tip),
+    React.createElement("button", { onClick: onExpand, style: { background: isExpanded ? "#3b0764" : "#0a0010", border: "1px solid #3b0764", borderRadius: 8, padding: "6px 14px", fontSize: 12, color: "#a78bfa", fontWeight: 700, cursor: "pointer", width: "100%" } },
+      isExpanded ? "▲ Hide How To" : "▼ How To"
+    ),
+    isExpanded && React.createElement("div", { style: { marginTop: 10, background: "#0a0010", borderRadius: 8, padding: "12px 14px" } },
+      ex.howto.map(function(step, s) {
+        return React.createElement("div", { key: s, style: { display: "flex", gap: 10, marginBottom: 8 } },
+          React.createElement("span", { style: { color: "#7c3aed", fontWeight: 800, fontSize: 13, minWidth: 20 } }, (s + 1) + "."),
+          React.createElement("span", { style: { color: "#e2e8f0", fontSize: 12, lineHeight: 1.5 } }, step)
+        );
+      })
+    )
+  );
+}
 
-  <!-- Cable Kickback -->
-  <div class="exercise" id="ex-0-3">
-    <div class="ex-header" onclick="toggleDetail('det-0-3')">
-      <div>
-        <div class="ex-name">🦶 Cable Kickback</div>
-        <div class="ex-sets">3 sets × 15 reps each leg · Start: 15–20 lb</div>
-      </div>
-      <div class="ex-check" id="chk-0-3" onclick="checkEx(event,'0-3',0,5)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-0-3">
-      <div class="anim-box">
-        <div style="display:flex;flex-direction:column;align-items:center">
-          <div class="kick-body"></div>
-          <div class="kick-leg"></div>
-        </div>
-      </div>
-      <div class="how-to">
-        <h4>How To</h4>
-        <ol>
-          <li>Face the cable machine, ankle strap on, hold bar for balance</li>
-          <li>Slight forward lean, keep core tight</li>
-          <li>Kick leg STRAIGHT back — don't rotate your hip</li>
-          <li>Squeeze the glute HARD at the top, hold 1 sec</li>
-          <li>Lower slowly — resist the weight on the way back</li>
-        </ol>
-      </div>
-      <button class="toggle-btn" onclick="checkEx(event,'0-3',0,5)">✅ Mark Done</button>
-    </div>
-  </div>
+function App() {
+  var s1 = useState(0); var dayIdx = s1[0]; var setDayIdx = s1[1];
+  var s2 = useState(4); var tab = s2[0]; var setTab = s2[1]; // 4 = tips
+  var s3 = useState(0); var phase = s3[0]; var setPhase = s3[1];
+  var s4 = useState({}); var checked = s4[0]; var setChecked = s4[1];
+  var s5 = useState({}); var expanded = s5[0]; var setExpanded = s5[1];
 
-  <!-- Abduction -->
-  <div class="exercise" id="ex-0-4">
-    <div class="ex-header" onclick="toggleDetail('det-0-4')">
-      <div>
-        <div class="ex-name">↔️ Seated Abduction Machine</div>
-        <div class="ex-sets">3 sets × 20 reps · Moderate weight</div>
-      </div>
-      <div class="ex-check" id="chk-0-4" onclick="checkEx(event,'0-4',0,5)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-0-4">
-      <div class="anim-box">
-        <div style="display:flex;flex-direction:column;align-items:center">
-          <div class="abduct-body"></div>
-          <div class="abduct-leg"></div>
-        </div>
-      </div>
-      <div class="how-to">
-        <h4>How To</h4>
-        <ol>
-          <li>Sit upright in machine, pads on outside of knees</li>
-          <li>Push legs OUT against the pads — slow and controlled</li>
-          <li>Hold open for 2 seconds — really squeeze outer glutes</li>
-          <li>Return slowly — don't let weight crash back</li>
-          <li>Lean forward slightly to target glute medius more</li>
-        </ol>
-      </div>
-      <button class="toggle-btn" onclick="checkEx(event,'0-4',0,5)">✅ Mark Done</button>
-    </div>
-  </div>
-</div>
+  var isDay = tab < 4;
+  var currentDay = isDay ? days[tab] : null;
+  var exercises = currentDay ? currentDay.exercises : [];
+  var done = exercises.filter(function(_, i) { return !!checked[tab+"-"+phase+"-"+i]; }).length;
+  var total = exercises.length;
+  var pct = total > 0 ? (done / total) * 100 : 0;
 
-<!-- WEDNESDAY -->
-<div class="day-panel" id="day1">
-  <div class="week-badge">MODERATE DAY · WEDNESDAY</div>
-  <div class="day-title">💜 Shape & Volume Session</div>
-  <div class="day-subtitle">Focus: Mind-muscle connection · Rest 90 sec between sets</div>
+  function toggleCheck(key) { setChecked(function(p) { var n = Object.assign({}, p); n[key] = !p[key]; return n; }); }
+  function toggleExpand(key) { setExpanded(function(p) { var n = Object.assign({}, p); n[key] = !p[key]; return n; }); }
 
-  <div class="progress-bar"><div class="progress-fill" id="prog1" style="width:0%"></div></div>
-  <div class="progress-text" id="ptxt1">0 of 4 exercises done</div>
+  return React.createElement("div", { style: { fontFamily: "system-ui, sans-serif", maxWidth: 460, margin: "0 auto", padding: 16, backgroundColor: "#0a0010", minHeight: "100vh" } },
 
-  <div class="exercise" id="ex-1-0">
-    <div class="ex-header" onclick="toggleDetail('det-1-0')">
-      <div><div class="ex-name">🦵 Bulgarian Split Squat</div><div class="ex-sets">3 sets × 10 reps each leg · 10–15 lb dumbbells</div></div>
-      <div class="ex-check" id="chk-1-0" onclick="checkEx(event,'1-0',1,4)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-1-0">
-      <div class="anim-box">
-        <div style="display:flex;align-items:flex-end;gap:8px">
-          <div class="lunge-front"></div><div class="lunge-back"></div>
-        </div>
-      </div>
-      <div class="how-to"><h4>How To</h4><ol>
-        <li>Back foot elevated on bench behind you, front foot forward</li>
-        <li>Lower your back knee toward the floor — keep front knee over foot</li>
-        <li>Drive through your FRONT heel to stand up</li>
-        <li>Feel it almost entirely in your front glute? Perfect.</li>
-        <li>Do all reps one leg, then switch</li>
-      </ol></div>
-      <button class="toggle-btn" onclick="checkEx(event,'1-0',1,4)">✅ Mark Done</button>
-    </div>
-  </div>
+    React.createElement("div", { style: { background: "linear-gradient(135deg, #7c1a4a, #c44dff)", borderRadius: 14, padding: "18px 20px", color: "white", marginBottom: 16 } },
+      React.createElement("div", { style: { fontSize: 22, fontWeight: 800 } }, "🍑 Bubble Butt Builder"),
+      React.createElement("div", { style: { fontSize: 13, opacity: 0.9, marginTop: 2 } }, "3 Days/Week · 12-Week Glute Growth Program"),
+      isDay && React.createElement("div", null,
+        React.createElement("div", { style: { marginTop: 10, background: "rgba(255,255,255,0.25)", borderRadius: 8, height: 8 } },
+          React.createElement("div", { style: { background: "white", borderRadius: 8, height: 8, width: pct + "%", transition: "width 0.3s" } })
+        ),
+        React.createElement("div", { style: { fontSize: 12, opacity: 0.85, marginTop: 4 } }, done + " of " + total + " complete" + (done === total && total > 0 ? " 🔥 SESSION DONE!" : ""))
+      )
+    ),
 
-  <div class="exercise" id="ex-1-1">
-    <div class="ex-header" onclick="toggleDetail('det-1-1')">
-      <div><div class="ex-name">🏋️ Hip Thrust (Pause Reps)</div><div class="ex-sets">4 sets × 8 reps · 3-second hold at top</div></div>
-      <div class="ex-check" id="chk-1-1" onclick="checkEx(event,'1-1',1,4)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-1-1">
-      <div class="anim-box">
-        <div style="position:relative;display:flex;flex-direction:column;align-items:center">
-          <div class="hipthrust-body"></div>
-        </div>
-      </div>
-      <div class="how-to"><h4>How To</h4><ol>
-        <li>Same setup as Monday hip thrust</li>
-        <li>Drive up — but HOLD for 3 full seconds at the top</li>
-        <li>This time under tension = more growth</li>
-        <li>Use slightly less weight than Monday to compensate for holds</li>
-        <li>Really squeeze and tuck pelvis at the top</li>
-      </ol></div>
-      <button class="toggle-btn" onclick="checkEx(event,'1-1',1,4)">✅ Mark Done</button>
-    </div>
-  </div>
-
-  <div class="exercise" id="ex-1-2">
-    <div class="ex-header" onclick="toggleDetail('det-1-2')">
-      <div><div class="ex-name">🚶 Walking Lunges</div><div class="ex-sets">3 sets × 12 reps each leg · 10–15 lb dumbbells</div></div>
-      <div class="ex-check" id="chk-1-2" onclick="checkEx(event,'1-2',1,4)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-1-2">
-      <div class="anim-box">
-        <div style="display:flex;align-items:flex-end;gap:8px">
-          <div class="lunge-front"></div><div class="lunge-back"></div>
-        </div>
-      </div>
-      <div class="how-to"><h4>How To</h4><ol>
-        <li>Step forward into a lunge — back knee drops close to floor</li>
-        <li>Drive through the FRONT heel to bring back foot forward</li>
-        <li>Step directly into the next lunge — keep walking forward</li>
-        <li>Stay tall — don't lean forward or let torso collapse</li>
-        <li>Feel the stretch in the back hip? That's the glute activating</li>
-      </ol></div>
-      <button class="toggle-btn" onclick="checkEx(event,'1-2',1,4)">✅ Mark Done</button>
-    </div>
-  </div>
-
-  <div class="exercise" id="ex-1-3">
-    <div class="ex-header" onclick="toggleDetail('det-1-3')">
-      <div><div class="ex-name">🟣 Banded Glute Bridge</div><div class="ex-sets">3 sets × 20 reps · Band just above knees</div></div>
-      <div class="ex-check" id="chk-1-3" onclick="checkEx(event,'1-3',1,4)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-1-3">
-      <div class="anim-box">
-        <div style="display:flex;flex-direction:column;align-items:center">
-          <div class="bridge-body"></div>
-        </div>
-      </div>
-      <div class="how-to"><h4>How To</h4><ol>
-        <li>Lie on floor, band above knees, feet flat hip-width</li>
-        <li>Press knees OUT against the band as you lift</li>
-        <li>Drive hips up — squeeze glutes at the top</li>
-        <li>Don't let knees cave in — keep that outward pressure</li>
-        <li>Lower slowly to keep tension on glutes</li>
-      </ol></div>
-      <button class="toggle-btn" onclick="checkEx(event,'1-3',1,4)">✅ Mark Done</button>
-    </div>
-  </div>
-</div>
-
-<!-- FRIDAY -->
-<div class="day-panel" id="day2">
-  <div class="week-badge">BURNOUT DAY · FRIDAY</div>
-  <div class="day-title">🔥 High Rep Finisher</div>
-  <div class="day-subtitle">Focus: Pump & endurance · Rest 60 sec between sets</div>
-
-  <div class="progress-bar"><div class="progress-fill" id="prog2" style="width:0%"></div></div>
-  <div class="progress-text" id="ptxt2">0 of 4 exercises done</div>
-
-  <div class="exercise" id="ex-2-0">
-    <div class="ex-header" onclick="toggleDetail('det-2-0')">
-      <div><div class="ex-name">🦵 Goblet Squat</div><div class="ex-sets">4 sets × 15 reps · 15 lb dumbbell</div></div>
-      <div class="ex-check" id="chk-2-0" onclick="checkEx(event,'2-0',2,4)">✓</div>
-    </div>
-    <div class="ex-detail" id="det-2-0">
-      <div class="anim-box">
-        <div style="display:flex;flex-direction:column;align-items:center">
-          <div class="squat-body"></div>
-          <div class="squat-legs"><div class="squat-leg"></div><div class="squat-leg"></div></div>
-        </div>
-      </div>
-      <div class="how-to"><h4>How To</h4><ol>
-        <li>Hold dumbbell at chest, feet shoulder-width or slightly wider</li>
-        <li>Squat deep — push knees out as you go down</li>
-        <li>At the bottom, elbows push knees wider (goblet position)</li>
-        <li>Drive through full foot to stand — don't rise on toes</li>
-        <li>Higher reps today — feel the burn, keep perfect form</li>
-      </ol></div>
-      <button class="toggle-btn" onclick="checkEx(event,'2-0',2,4)">✅ Mark Done</button>
-    </div>
-  </div>
-
-  <div class="exercise" id="ex-2-1">
-    <div class="ex-head
+    React.createElement("div", { style: { display: "flex", background: "#1a0030", borderRadius: 10, padding: 4, marginB
