@@ -1,253 +1,404 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Felicia's Glute Finisher</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #f9fafb; font-family: system-ui, sans-serif; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubble Butt Builder</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a0a2e; color: #fff; min-height: 100vh; }
+  
+  header { background: linear-gradient(135deg, #ff6b9d, #c44dff, #ff6b9d); padding: 20px; text-align: center; }
+  header h1 { font-size: 1.8em; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+  header p { font-size: 0.85em; opacity: 0.9; margin-top: 4px; }
+
+  .tabs { display: flex; background: #2d1052; overflow-x: auto; }
+  .tab { flex: 1; padding: 12px 8px; text-align: center; font-size: 0.75em; font-weight: 700; cursor: pointer; border-bottom: 3px solid transparent; color: #a78bca; white-space: nowrap; min-width: 80px; transition: all 0.2s; }
+  .tab.active { color: #ff6b9d; border-bottom-color: #ff6b9d; background: #3a1468; }
+
+  .day-panel { display: none; padding: 16px; }
+  .day-panel.active { display: block; }
+
+  .day-title { font-size: 1.1em; font-weight: 800; color: #ff6b9d; margin-bottom: 4px; }
+  .day-subtitle { font-size: 0.78em; color: #c4a8e0; margin-bottom: 16px; }
+
+  .exercise { background: #2d1052; border-radius: 14px; margin-bottom: 12px; overflow: hidden; border: 1.5px solid #4a1f8a; transition: border-color 0.2s; }
+  .exercise.done { border-color: #ff6b9d; background: #3d1560; }
+
+  .ex-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .ex-name { font-weight: 700; font-size: 0.95em; }
+  .ex-sets { font-size: 0.75em; color: #c4a8e0; margin-top: 2px; }
+  .ex-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c44dff; display: flex; align-items: center; justify-content: center; font-size: 1em; flex-shrink: 0; cursor: pointer; transition: all 0.2s; }
+  .ex-check.checked { background: #ff6b9d; border-color: #ff6b9d; }
+
+  .ex-detail { display: none; padding: 0 16px 16px; }
+  .ex-detail.open { display: block; }
+
+  /* CSS Animation demos */
+  .anim-box { background: #1a0a2e; border-radius: 10px; height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; position: relative; overflow: hidden; }
+  .stick { position: relative; }
+
+  /* Hip Thrust */
+  .hipthrust-body { width: 60px; height: 14px; background: #ff6b9d; border-radius: 7px; transform-origin: left center; animation: hipthrust 1.8s ease-in-out infinite; }
+  @keyframes hipthrust { 0%,100%{transform:rotate(30deg) translateY(10px)} 50%{transform:rotate(-10deg) translateY(-10px)} }
+  .hipthrust-legs { width: 40px; height: 12px; background: #c44dff; border-radius: 6px; position: absolute; bottom: 20px; right: -10px; transform-origin: right center; animation: hipthrustleg 1.8s ease-in-out infinite; }
+  @keyframes hipthrustleg { 0%,100%{transform:rotate(60deg)} 50%{transform:rotate(30deg)} }
+
+  /* Squat */
+  .squat-body { width: 14px; height: 40px; background: #ff6b9d; border-radius: 7px; animation: squatbody 1.8s ease-in-out infinite; }
+  @keyframes squatbody { 0%,100%{height:40px;transform:translateY(0)} 50%{height:28px;transform:translateY(12px)} }
+  .squat-legs { display: flex; gap: 6px; margin-top: 4px; }
+  .squat-leg { width: 10px; height: 24px; background: #c44dff; border-radius: 5px; animation: squatleg 1.8s ease-in-out infinite; }
+  @keyframes squatleg { 0%,100%{height:24px} 50%{height:16px} }
+
+  /* Kickback */
+  .kick-body { width: 50px; height: 12px; background: #ff6b9d; border-radius: 6px; }
+  .kick-leg { width: 35px; height: 10px; background: #c44dff; border-radius: 5px; margin-top: 6px; transform-origin: left center; animation: kickback 1.5s ease-in-out infinite; }
+  @keyframes kickback { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(-40deg) translateY(-5px)} }
+
+  /* RDL */
+  .rdl-body { width: 50px; height: 12px; background: #ff6b9d; border-radius: 6px; transform-origin: right center; animation: rdl 2s ease-in-out infinite; }
+  @keyframes rdl { 0%,100%{transform:rotate(-80deg)} 50%{transform:rotate(0deg)} }
+  .rdl-legs { width: 12px; height: 38px; background: #c44dff; border-radius: 6px; margin-top: -5px; }
+
+  /* Lunge */
+  .lunge-front { width: 12px; height: 30px; background: #ff6b9d; border-radius: 6px; animation: lungefront 1.8s ease-in-out infinite; }
+  @keyframes lungefront { 0%,100%{transform:translateX(0) rotate(0)} 50%{transform:translateX(14px) rotate(5deg)} }
+  .lunge-back { width: 12px; height: 30px; background: #c44dff; border-radius: 6px; animation: lungeback 1.8s ease-in-out infinite; margin-left: 10px; }
+  @keyframes lungeback { 0%,100%{transform:translateX(0)} 50%{transform:translateX(-10px) rotate(-10deg)} }
+
+  /* Abduction */
+  .abduct-body { width: 12px; height: 35px; background: #ff6b9d; border-radius: 6px; }
+  .abduct-leg { width: 30px; height: 10px; background: #c44dff; border-radius: 5px; margin-top: 4px; transform-origin: left center; animation: abduct 1.6s ease-in-out infinite; }
+  @keyframes abduct { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(-25deg)} }
+
+  /* Bridge */
+  .bridge-body { width: 55px; height: 12px; background: #ff6b9d; border-radius: 6px; animation: bridge 1.8s ease-in-out infinite; }
+  @keyframes bridge { 0%,100%{transform:translateY(12px) rotate(5deg)} 50%{transform:translateY(-5px) rotate(-5deg)} }
+
+  .how-to { background: #1a0a2e; border-radius: 8px; padding: 12px 14px; }
+  .how-to h4 { font-size: 0.78em; color: #ff6b9d; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; }
+  .how-to ol { padding-left: 16px; }
+  .how-to li { font-size: 0.8em; color: #d4b8f0; line-height: 1.5; margin-bottom: 5px; }
+
+  .tip-box { background: linear-gradient(135deg, #3d1560, #2d1052); border-left: 3px solid #ff6b9d; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; font-size: 0.8em; color: #e0c8ff; }
+  .tip-box strong { color: #ff6b9d; }
+
+  .toggle-btn { background: #3d1560; border: 1px solid #c44dff; color: #e0c8ff; border-radius: 8px; padding: 7px 14px; font-size: 0.75em; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; }
+
+  .progress-bar { height: 6px; background: #2d1052; border-radius: 3px; margin: 16px 0 8px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #ff6b9d, #c44dff); border-radius: 3px; transition: width 0.4s; }
+  .progress-text { font-size: 0.75em; color: #c4a8e0; text-align: center; margin-bottom: 16px; }
+
+  .week-badge { background: linear-gradient(135deg, #ff6b9d, #c44dff); color: white; font-size: 0.7em; font-weight: 800; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
+</style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
 
-var useState = React.useState;
+<header>
+  <h1>🍑 BUBBLE BUTT BUILDER</h1>
+  <p>Glute Growth Program · Post-Bypass Safe · Tap to check off exercises</p>
+</header>
 
-var phaseLabels = ["Weeks 1-4", "Weeks 5-8", "Weeks 9-12"];
+<div class="tabs" id="tabs">
+  <div class="tab active" onclick="showDay(0)">MON</div>
+  <div class="tab" onclick="showDay(1)">WED</div>
+  <div class="tab" onclick="showDay(2)">FRI</div>
+  <div class="tab" onclick="showDay(3)">WARM UP</div>
+  <div class="tab" onclick="showDay(4)">TIPS</div>
+</div>
 
-var waistCircuit = [
-  { name: "Stomach Vacuums", sets: 3, reps: "10 x 10 sec holds", homeNote: "" },
-  { name: "Pallof Press", sets: 3, reps: "12 each side", homeNote: "Use band anchored to door" },
-  { name: "Bicycle Crunches", sets: 3, reps: "20 reps", homeNote: "" },
-  { name: "Side Plank Hip Dips", sets: 3, reps: "15 each side", homeNote: "" }
-];
+<div id="panels">
 
-var gymDays = [
-  {
-    name: "Monday", theme: "Power Day", waist: false,
-    exercises: [
-      { name: "Hip Thrusts", star: true, sets: 4, reps: "10", w: [["75 lbs","95 lbs"],["95 lbs","115 lbs"],["115 lbs","135 lbs"]] },
-      { name: "Romanian Deadlift", star: true, sets: 4, reps: "10-12", w: [["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"],["35 lbs each","40 lbs each"]] },
-      { name: "Bulgarian Split Squats", sets: 4, reps: "10 each leg", w: [["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"],["35 lbs each","40 lbs each"]] },
-      { name: "Cable Kickbacks", sets: 4, reps: "12 each leg", w: [["30 lbs","37.5 lbs"],["37.5 lbs","45 lbs"],["45 lbs","52.5 lbs"]] },
-      { name: "Banded Lateral Walks", hip: true, sets: 2, reps: "20 steps each way", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]] },
-      { name: "Standing Clamshells", hip: true, sets: 2, reps: "20-25 each side", w: [["25 lb plate","25 lb plate"],["25 lb plate","45 lb plate"],["45 lb plate","45 lb plate"]] }
-    ]
-  },
-  {
-    name: "Tuesday", theme: "Shape & Isolation Day", waist: true,
-    exercises: [
-      { name: "Hip Thrusts", star: true, sets: 4, reps: "10", w: [["75 lbs","95 lbs"],["95 lbs","115 lbs"],["115 lbs","135 lbs"]] },
-      { name: "Romanian Deadlift", star: true, sets: 4, reps: "10-12", w: [["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"],["35 lbs each","40 lbs each"]] },
-      { name: "Curtsy Lunges", sets: 4, reps: "12 each leg", w: [["20 lbs each","25 lbs each"],["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"]] },
-      { name: "Banded Knee Squats", sets: 4, reps: "15", w: [["30 lbs","40 lbs"],["40 lbs","50 lbs"],["50 lbs","60 lbs"]] },
-      { name: "Hip Dips", hip: true, sets: 2, reps: "20-25 each side", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]] },
-      { name: "Banded Lying Abduction", hip: true, sets: 2, reps: "20-25", w: [["Light band","Light band"],["Light band","Medium band"],["Medium band","Heavy band"]] }
-    ]
-  },
-  {
-    name: "Wednesday", theme: "Unilateral Day", waist: false,
-    exercises: [
-      { name: "Hip Thrusts", star: true, sets: 4, reps: "10", w: [["75 lbs","95 lbs"],["95 lbs","115 lbs"],["115 lbs","135 lbs"]] },
-      { name: "Romanian Deadlift", star: true, sets: 4, reps: "10-12", w: [["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"],["35 lbs each","40 lbs each"]] },
-      { name: "Single Leg Deadlift", sets: 4, reps: "10 each leg", w: [["20 lbs each","25 lbs each"],["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"]] },
-      { name: "Step Ups", sets: 4, reps: "12 each leg", w: [["20 lbs each","25 lbs each"],["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"]] },
-      { name: "Banded Lateral Walks", hip: true, sets: 2, reps: "20 steps each way", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]] },
-      { name: "Hip Dips", hip: true, sets: 2, reps: "20-25 each side", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]] }
-    ]
-  },
-  {
-    name: "Thursday", theme: "Burn Day", waist: true,
-    exercises: [
-      { name: "Hip Thrusts", star: true, sets: 4, reps: "10", w: [["75 lbs","95 lbs"],["95 lbs","115 lbs"],["115 lbs","135 lbs"]] },
-      { name: "Romanian Deadlift", star: true, sets: 4, reps: "10-12", w: [["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"],["35 lbs each","40 lbs each"]] },
-      { name: "Side Lunges", sets: 4, reps: "12 each leg", w: [["15 lbs each","20 lbs each"],["20 lbs each","25 lbs each"],["25 lbs each","30 lbs each"]] },
-      { name: "Single Leg Kneeling Squat", sets: 4, reps: "10 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","+5 lb plate"],["+5 lb plate","+10 lb plate"]] },
-      { name: "Standing Clamshells", hip: true, sets: 2, reps: "20-25 each side", w: [["25 lb plate","25 lb plate"],["25 lb plate","45 lb plate"],["45 lb plate","45 lb plate"]] },
-      { name: "Banded Lying Abduction", hip: true, sets: 2, reps: "20-25", w: [["Light band","Light band"],["Light band","Medium band"],["Medium band","Heavy band"]] }
-    ]
-  },
-  {
-    name: "Friday", theme: "Full Glute Finisher", waist: false,
-    exercises: [
-      { name: "Hip Thrusts", star: true, sets: 4, reps: "10", w: [["75 lbs","95 lbs"],["95 lbs","115 lbs"],["115 lbs","135 lbs"]] },
-      { name: "Romanian Deadlift", star: true, sets: 4, reps: "10-12", w: [["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"],["35 lbs each","40 lbs each"]] },
-      { name: "Sumo Squats", sets: 4, reps: "12", w: [["30 lbs","40 lbs"],["40 lbs","50 lbs"],["50 lbs","60 lbs"]] },
-      { name: "Curtsy Lunges", sets: 4, reps: "12 each leg", w: [["20 lbs each","25 lbs each"],["25 lbs each","30 lbs each"],["30 lbs each","35 lbs each"]] },
-      { name: "Banded Lateral Walks", hip: true, sets: 2, reps: "20 steps each way", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]] },
-      { name: "Standing Clamshells", hip: true, sets: 2, reps: "20-25 each side", w: [["25 lb plate","25 lb plate"],["25 lb plate","45 lb plate"],["45 lb plate","45 lb plate"]] }
-    ]
-  }
-];
+<!-- MONDAY -->
+<div class="day-panel active" id="day0">
+  <div class="week-badge">HEAVY DAY · MONDAY</div>
+  <div class="day-title">🔥 Power Glute Session</div>
+  <div class="day-subtitle">Focus: Maximum muscle activation · Rest 2–3 min between sets</div>
 
-var homeDays = [
-  {
-    name: "Monday", theme: "Power Day", waist: false,
-    exercises: [
-      { name: "Bench Hip Thrusts", star: true, sets: 4, reps: "10", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]], note: "Shoulders on bench, band across hips" },
-      { name: "Single Leg RDL", star: true, sets: 4, reps: "10-12 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]], note: "Stand on band, hinge at hips" },
-      { name: "Bulgarian Split Squats", sets: 4, reps: "10 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]], note: "Rear foot on bench or chair" },
-      { name: "Banded Kickbacks", sets: 4, reps: "12 each leg", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]], note: "Band around ankles, on all fours" },
-      { name: "Banded Lateral Walks", hip: true, sets: 2, reps: "20 steps each way", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]] },
-      { name: "Standing Clamshells", hip: true, sets: 2, reps: "20-25 each side", w: [["Light band","Light band"],["Light band","Medium band"],["Medium band","Heavy band"]] }
-    ]
-  },
-  {
-    name: "Tuesday", theme: "Shape & Isolation Day", waist: true,
-    exercises: [
-      { name: "Bench Hip Thrusts", star: true, sets: 4, reps: "10", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]], note: "Shoulders on bench, band across hips" },
-      { name: "Single Leg RDL", star: true, sets: 4, reps: "10-12 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]], note: "Stand on band, hinge at hips" },
-      { name: "Curtsy Lunges", sets: 4, reps: "12 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]] },
-      { name: "Banded Squat Pulses", sets: 4, reps: "20 pulses", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]], note: "Band above knees, stay low" },
-      { name: "Hip Dips", hip: true, sets: 2, reps: "20-25 each side", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]] },
-      { name: "Banded Lying Abduction", hip: true, sets: 2, reps: "20-25", w: [["Light band","Light band"],["Light band","Medium band"],["Medium band","Heavy band"]] }
-    ]
-  },
-  {
-    name: "Wednesday", theme: "Unilateral Day", waist: false,
-    exercises: [
-      { name: "Bench Hip Thrusts", star: true, sets: 4, reps: "10", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]], note: "Shoulders on bench, band across hips" },
-      { name: "Single Leg RDL", star: true, sets: 4, reps: "10-12 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]], note: "Stand on band, hinge at hips" },
-      { name: "Single Leg Deadlift", sets: 4, reps: "10 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]] },
-      { name: "Step Ups", sets: 4, reps: "12 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]], note: "Use bench or sturdy chair" },
-      { name: "Banded Lateral Walks", hip: true, sets: 2, reps: "20 steps each way", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]] },
-      { name: "Hip Dips", hip: true, sets: 2, reps: "20-25 each side", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]] }
-    ]
-  },
-  {
-    name: "Thursday", theme: "Burn Day", waist: true,
-    exercises: [
-      { name: "Bench Hip Thrusts", star: true, sets: 4, reps: "10", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]], note: "Shoulders on bench, band across hips" },
-      { name: "Single Leg RDL", star: true, sets: 4, reps: "10-12 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]], note: "Stand on band, hinge at hips" },
-      { name: "Side Lunges", sets: 4, reps: "12 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]] },
-      { name: "Single Leg Kneeling Squat", sets: 4, reps: "10 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Bodyweight"],["Bodyweight","Bodyweight"]] },
-      { name: "Standing Clamshells", hip: true, sets: 2, reps: "20-25 each side", w: [["Light band","Light band"],["Light band","Medium band"],["Medium band","Heavy band"]] },
-      { name: "Banded Lying Abduction", hip: true, sets: 2, reps: "20-25", w: [["Light band","Light band"],["Light band","Medium band"],["Medium band","Heavy band"]] }
-    ]
-  },
-  {
-    name: "Friday", theme: "Full Glute Finisher", waist: false,
-    exercises: [
-      { name: "Bench Hip Thrusts", star: true, sets: 4, reps: "10", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]], note: "Shoulders on bench, band across hips" },
-      { name: "Single Leg RDL", star: true, sets: 4, reps: "10-12 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]], note: "Stand on band, hinge at hips" },
-      { name: "Sumo Squat Pulses", sets: 4, reps: "20 pulses", w: [["Bodyweight","Light band"],["Light band","Medium band"],["Medium band","Heavy band"]] },
-      { name: "Curtsy Lunges", sets: 4, reps: "12 each leg", w: [["Bodyweight","Bodyweight"],["Bodyweight","Light band"],["Light band","Medium band"]] },
-      { name: "Banded Lateral Walks", hip: true, sets: 2, reps: "20 steps each way", w: [["Light band","Medium band"],["Medium band","Heavy band"],["Heavy band","Heavy band"]] },
-      { name: "Standing Clamshells", hip: true, sets: 2, reps: "20-25 each side", w: [["Light band","Light band"],["Light band","Medium band"],["Medium band","Heavy band"]] }
-    ]
-  }
-];
+  <div class="progress-bar"><div class="progress-fill" id="prog0" style="width:0%"></div></div>
+  <div class="progress-text" id="ptxt0">0 of 5 exercises done</div>
 
-function App() {
-  var stateDay = useState(0);
-  var dayIdx = stateDay[0]; var setDayIdx = stateDay[1];
-  var statePhase = useState(0);
-  var phase = statePhase[0]; var setPhase = statePhase[1];
-  var stateChecked = useState({});
-  var checked = stateChecked[0]; var setChecked = stateChecked[1];
-  var stateHome = useState(false);
-  var isHome = stateHome[0]; var setIsHome = stateHome[1];
+  <!-- Hip Thrust -->
+  <div class="exercise" id="ex-0-0">
+    <div class="ex-header" onclick="toggleDetail('det-0-0')">
+      <div>
+        <div class="ex-name">🏋️ Barbell Hip Thrust</div>
+        <div class="ex-sets">4 sets × 10–12 reps · Start: 45 lb bar</div>
+      </div>
+      <div class="ex-check" id="chk-0-0" onclick="checkEx(event,'0-0',0,5)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-0-0">
+      <div class="anim-box">
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center">
+          <div class="hipthrust-body"></div>
+          <div class="hipthrust-legs"></div>
+        </div>
+      </div>
+      <div class="how-to">
+        <h4>How To</h4>
+        <ol>
+          <li>Sit on floor, upper back against bench, bar across hips with pad</li>
+          <li>Feet flat, hip-width apart, knees bent ~90°</li>
+          <li>Drive through heels — squeeze glutes HARD at the top</li>
+          <li>Hold 1 second at top, lower slowly (3 counts down)</li>
+          <li>Keep chin tucked — don't arch your lower back</li>
+        </ol>
+      </div>
+      <button class="toggle-btn" onclick="checkEx(event,'0-0',0,5)">✅ Mark Done</button>
+    </div>
+  </div>
 
-  var days = isHome ? homeDays : gymDays;
-  var day = days[dayIdx];
+  <!-- Romanian Deadlift -->
+  <div class="exercise" id="ex-0-1">
+    <div class="ex-header" onclick="toggleDetail('det-0-1')">
+      <div>
+        <div class="ex-name">🏋️ Romanian Deadlift</div>
+        <div class="ex-sets">3 sets × 10–12 reps · Start: 20–30 lb dumbbells</div>
+      </div>
+      <div class="ex-check" id="chk-0-1" onclick="checkEx(event,'0-1',0,5)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-0-1">
+      <div class="anim-box">
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center">
+          <div class="rdl-body"></div>
+          <div class="rdl-legs"></div>
+        </div>
+      </div>
+      <div class="how-to">
+        <h4>How To</h4>
+        <ol>
+          <li>Stand holding dumbbells in front of thighs, slight knee bend</li>
+          <li>Hinge at the HIPS — push your butt back, not down</li>
+          <li>Lower weights along your legs until you feel hamstring stretch</li>
+          <li>Squeeze glutes to drive hips forward and return to standing</li>
+          <li>Think "close the car door with your butt"</li>
+        </ol>
+      </div>
+      <button class="toggle-btn" onclick="checkEx(event,'0-1',0,5)">✅ Mark Done</button>
+    </div>
+  </div>
 
-  function toggle(key) {
-    setChecked(function(p) {
-      var n = Object.assign({}, p);
-      n[key] = !p[key];
-      return n;
-    });
-  }
+  <!-- Sumo Squat -->
+  <div class="exercise" id="ex-0-2">
+    <div class="ex-header" onclick="toggleDetail('det-0-2')">
+      <div>
+        <div class="ex-name">🦵 Sumo Goblet Squat</div>
+        <div class="ex-sets">3 sets × 12–15 reps · Start: 15–20 lb dumbbell</div>
+      </div>
+      <div class="ex-check" id="chk-0-2" onclick="checkEx(event,'0-2',0,5)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-0-2">
+      <div class="anim-box">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="squat-body"></div>
+          <div class="squat-legs"><div class="squat-leg"></div><div class="squat-leg"></div></div>
+        </div>
+      </div>
+      <div class="how-to">
+        <h4>How To</h4>
+        <ol>
+          <li>Wide stance, toes pointed out 45°, hold dumbbell at chest</li>
+          <li>Sit DOWN between your legs — not back like a regular squat</li>
+          <li>Knees track over toes the whole way down</li>
+          <li>Drive through heels to stand — squeeze inner thighs and glutes</li>
+          <li>Go as deep as comfortable for your hips</li>
+        </ol>
+      </div>
+      <button class="toggle-btn" onclick="checkEx(event,'0-2',0,5)">✅ Mark Done</button>
+    </div>
+  </div>
 
-  var total = day.exercises.length + (day.waist ? waistCircuit.length : 0);
-  var done = 0;
-  day.exercises.forEach(function(_, i) { if (checked[dayIdx + "-" + phase + "-" + i]) done++; });
-  if (day.waist) waistCircuit.forEach(function(_, i) { if (checked[dayIdx + "-" + phase + "-w" + i]) done++; });
-  var pct = total > 0 ? (done / total) * 100 : 0;
+  <!-- Cable Kickback -->
+  <div class="exercise" id="ex-0-3">
+    <div class="ex-header" onclick="toggleDetail('det-0-3')">
+      <div>
+        <div class="ex-name">🦶 Cable Kickback</div>
+        <div class="ex-sets">3 sets × 15 reps each leg · Start: 15–20 lb</div>
+      </div>
+      <div class="ex-check" id="chk-0-3" onclick="checkEx(event,'0-3',0,5)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-0-3">
+      <div class="anim-box">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="kick-body"></div>
+          <div class="kick-leg"></div>
+        </div>
+      </div>
+      <div class="how-to">
+        <h4>How To</h4>
+        <ol>
+          <li>Face the cable machine, ankle strap on, hold bar for balance</li>
+          <li>Slight forward lean, keep core tight</li>
+          <li>Kick leg STRAIGHT back — don't rotate your hip</li>
+          <li>Squeeze the glute HARD at the top, hold 1 sec</li>
+          <li>Lower slowly — resist the weight on the way back</li>
+        </ol>
+      </div>
+      <button class="toggle-btn" onclick="checkEx(event,'0-3',0,5)">✅ Mark Done</button>
+    </div>
+  </div>
 
-  return React.createElement("div", { style: { fontFamily: "system-ui, sans-serif", maxWidth: 460, margin: "0 auto", padding: 16, backgroundColor: "#f9fafb", minHeight: "100vh" } },
+  <!-- Abduction -->
+  <div class="exercise" id="ex-0-4">
+    <div class="ex-header" onclick="toggleDetail('det-0-4')">
+      <div>
+        <div class="ex-name">↔️ Seated Abduction Machine</div>
+        <div class="ex-sets">3 sets × 20 reps · Moderate weight</div>
+      </div>
+      <div class="ex-check" id="chk-0-4" onclick="checkEx(event,'0-4',0,5)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-0-4">
+      <div class="anim-box">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="abduct-body"></div>
+          <div class="abduct-leg"></div>
+        </div>
+      </div>
+      <div class="how-to">
+        <h4>How To</h4>
+        <ol>
+          <li>Sit upright in machine, pads on outside of knees</li>
+          <li>Push legs OUT against the pads — slow and controlled</li>
+          <li>Hold open for 2 seconds — really squeeze outer glutes</li>
+          <li>Return slowly — don't let weight crash back</li>
+          <li>Lean forward slightly to target glute medius more</li>
+        </ol>
+      </div>
+      <button class="toggle-btn" onclick="checkEx(event,'0-4',0,5)">✅ Mark Done</button>
+    </div>
+  </div>
+</div>
 
-    React.createElement("div", { style: { background: "linear-gradient(135deg, #7c3aed, #db2777)", borderRadius: 14, padding: "18px 20px", color: "white", marginBottom: 16 } },
-      React.createElement("div", { style: { fontSize: 20, fontWeight: 800 } }, "Felicia's Glute Finisher"),
-      React.createElement("div", { style: { fontSize: 13, opacity: 0.9, marginTop: 2 } }, "After Shred App · 15-25 min"),
-      React.createElement("div", { style: { marginTop: 10, background: "rgba(255,255,255,0.25)", borderRadius: 8, height: 8 } },
-        React.createElement("div", { style: { background: "white", borderRadius: 8, height: 8, width: pct + "%", transition: "width 0.3s" } })
-      ),
-      React.createElement("div", { style: { fontSize: 12, opacity: 0.85, marginTop: 4 } }, done + " of " + total + " complete")
-    ),
+<!-- WEDNESDAY -->
+<div class="day-panel" id="day1">
+  <div class="week-badge">MODERATE DAY · WEDNESDAY</div>
+  <div class="day-title">💜 Shape & Volume Session</div>
+  <div class="day-subtitle">Focus: Mind-muscle connection · Rest 90 sec between sets</div>
 
-    React.createElement("div", { style: { display: "flex", background: "white", borderRadius: 10, padding: 4, marginBottom: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" } },
-      React.createElement("button", { onClick: function() { setIsHome(false); setChecked({}); }, style: { flex: 1, padding: 9, borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: !isHome ? "#7c3aed" : "transparent", color: !isHome ? "white" : "#6b7280" } }, "🏋️ Gym Mode"),
-      React.createElement("button", { onClick: function() { setIsHome(true); setChecked({}); }, style: { flex: 1, padding: 9, borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: isHome ? "#7c3aed" : "transparent", color: isHome ? "white" : "#6b7280" } }, "🏠 Home Mode")
-    ),
+  <div class="progress-bar"><div class="progress-fill" id="prog1" style="width:0%"></div></div>
+  <div class="progress-text" id="ptxt1">0 of 4 exercises done</div>
 
-    React.createElement("div", { style: { marginBottom: 14 } },
-      React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, letterSpacing: 1 } }, "PHASE"),
-      React.createElement("div", { style: { display: "flex", gap: 8 } },
-        phaseLabels.map(function(l, i) {
-          return React.createElement("button", { key: i, onClick: function() { setPhase(i); setChecked({}); }, style: { flex: 1, padding: "9px 4px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, background: phase === i ? "#7c3aed" : "white", color: phase === i ? "white" : "#374151", boxShadow: phase === i ? "0 2px 8px rgba(124,58,237,0.3)" : "0 1px 3px rgba(0,0,0,0.08)" } }, l);
-        })
-      )
-    ),
+  <div class="exercise" id="ex-1-0">
+    <div class="ex-header" onclick="toggleDetail('det-1-0')">
+      <div><div class="ex-name">🦵 Bulgarian Split Squat</div><div class="ex-sets">3 sets × 10 reps each leg · 10–15 lb dumbbells</div></div>
+      <div class="ex-check" id="chk-1-0" onclick="checkEx(event,'1-0',1,4)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-1-0">
+      <div class="anim-box">
+        <div style="display:flex;align-items:flex-end;gap:8px">
+          <div class="lunge-front"></div><div class="lunge-back"></div>
+        </div>
+      </div>
+      <div class="how-to"><h4>How To</h4><ol>
+        <li>Back foot elevated on bench behind you, front foot forward</li>
+        <li>Lower your back knee toward the floor — keep front knee over foot</li>
+        <li>Drive through your FRONT heel to stand up</li>
+        <li>Feel it almost entirely in your front glute? Perfect.</li>
+        <li>Do all reps one leg, then switch</li>
+      </ol></div>
+      <button class="toggle-btn" onclick="checkEx(event,'1-0',1,4)">✅ Mark Done</button>
+    </div>
+  </div>
 
-    React.createElement("div", { style: { marginBottom: 16 } },
-      React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, letterSpacing: 1 } }, "DAY"),
-      React.createElement("div", { style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 } },
-        days.map(function(d, i) {
-          return React.createElement("button", { key: i, onClick: function() { setDayIdx(i); setChecked({}); }, style: { padding: "8px 12px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", background: dayIdx === i ? "#db2777" : "white", color: dayIdx === i ? "white" : "#374151", boxShadow: dayIdx === i ? "0 2px 8px rgba(219,39,119,0.3)" : "0 1px 3px rgba(0,0,0,0.08)" } }, d.name);
-        })
-      )
-    ),
+  <div class="exercise" id="ex-1-1">
+    <div class="ex-header" onclick="toggleDetail('det-1-1')">
+      <div><div class="ex-name">🏋️ Hip Thrust (Pause Reps)</div><div class="ex-sets">4 sets × 8 reps · 3-second hold at top</div></div>
+      <div class="ex-check" id="chk-1-1" onclick="checkEx(event,'1-1',1,4)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-1-1">
+      <div class="anim-box">
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center">
+          <div class="hipthrust-body"></div>
+        </div>
+      </div>
+      <div class="how-to"><h4>How To</h4><ol>
+        <li>Same setup as Monday hip thrust</li>
+        <li>Drive up — but HOLD for 3 full seconds at the top</li>
+        <li>This time under tension = more growth</li>
+        <li>Use slightly less weight than Monday to compensate for holds</li>
+        <li>Really squeeze and tuck pelvis at the top</li>
+      </ol></div>
+      <button class="toggle-btn" onclick="checkEx(event,'1-1',1,4)">✅ Mark Done</button>
+    </div>
+  </div>
 
-    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 } },
-      React.createElement("div", { style: { fontSize: 16, fontWeight: 800, color: "#111827" } }, day.name + " - " + day.theme),
-      day.waist && React.createElement("span", { style: { fontSize: 11, background: "#fce7f3", color: "#db2777", padding: "3px 8px", borderRadius: 20, fontWeight: 700 } }, "+ Waist")
-    ),
+  <div class="exercise" id="ex-1-2">
+    <div class="ex-header" onclick="toggleDetail('det-1-2')">
+      <div><div class="ex-name">🚶 Walking Lunges</div><div class="ex-sets">3 sets × 12 reps each leg · 10–15 lb dumbbells</div></div>
+      <div class="ex-check" id="chk-1-2" onclick="checkEx(event,'1-2',1,4)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-1-2">
+      <div class="anim-box">
+        <div style="display:flex;align-items:flex-end;gap:8px">
+          <div class="lunge-front"></div><div class="lunge-back"></div>
+        </div>
+      </div>
+      <div class="how-to"><h4>How To</h4><ol>
+        <li>Step forward into a lunge — back knee drops close to floor</li>
+        <li>Drive through the FRONT heel to bring back foot forward</li>
+        <li>Step directly into the next lunge — keep walking forward</li>
+        <li>Stay tall — don't lean forward or let torso collapse</li>
+        <li>Feel the stretch in the back hip? That's the glute activating</li>
+      </ol></div>
+      <button class="toggle-btn" onclick="checkEx(event,'1-2',1,4)">✅ Mark Done</button>
+    </div>
+  </div>
 
-    React.createElement("div", { style: { background: "#ede9fe", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#5b21b6", marginBottom: 14, fontWeight: 600 } }, "Sets 1-2: lighter | Sets 3-4: heavier"),
+  <div class="exercise" id="ex-1-3">
+    <div class="ex-header" onclick="toggleDetail('det-1-3')">
+      <div><div class="ex-name">🟣 Banded Glute Bridge</div><div class="ex-sets">3 sets × 20 reps · Band just above knees</div></div>
+      <div class="ex-check" id="chk-1-3" onclick="checkEx(event,'1-3',1,4)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-1-3">
+      <div class="anim-box">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="bridge-body"></div>
+        </div>
+      </div>
+      <div class="how-to"><h4>How To</h4><ol>
+        <li>Lie on floor, band above knees, feet flat hip-width</li>
+        <li>Press knees OUT against the band as you lift</li>
+        <li>Drive hips up — squeeze glutes at the top</li>
+        <li>Don't let knees cave in — keep that outward pressure</li>
+        <li>Lower slowly to keep tension on glutes</li>
+      </ol></div>
+      <button class="toggle-btn" onclick="checkEx(event,'1-3',1,4)">✅ Mark Done</button>
+    </div>
+  </div>
+</div>
 
-    day.exercises.map(function(ex, i) {
-      var key = dayIdx + "-" + phase + "-" + i;
-      var isDone = !!checked[key];
-      return React.createElement("div", { key: i, onClick: function() { toggle(key); }, style: { background: isDone ? "#f0fdf4" : "white", border: "2px solid " + (isDone ? "#86efac" : ex.hip ? "#c4b5fd" : "#e5e7eb"), borderRadius: 12, padding: "12px 14px", marginBottom: 10, cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" } },
-        React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" } },
-          React.createElement("div", { style: { fontWeight: 700, fontSize: 14, color: isDone ? "#16a34a" : "#111827" } }, (isDone ? "✅ " : "") + (ex.star ? "⭐ " : "") + (ex.hip ? "🟣 " : "") + ex.name),
-          React.createElement("div", { style: { fontSize: 11, color: "#6b7280", textAlign: "right" } }, ex.sets + " sets", React.createElement("br"), ex.reps)
-        ),
-        React.createElement("div", { style: { marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" } },
-          React.createElement("span", { style: { background: "#ede9fe", color: "#6d28d9", padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600 } }, "1-2: " + ex.w[phase][0]),
-          React.createElement("span", { style: { background: "#fce7f3", color: "#be185d", padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600 } }, "3-4: " + ex.w[phase][1])
-        ),
-        ex.note && React.createElement("div", { style: { marginTop: 6, fontSize: 11, color: "#6b7280", fontStyle: "italic" } }, ex.note),
-        ex.hip && React.createElement("div", { style: { marginTop: 6, fontSize: 11, color: "#7c3aed", fontWeight: 600 } }, "2-sec squeeze every rep")
-      );
-    }),
+<!-- FRIDAY -->
+<div class="day-panel" id="day2">
+  <div class="week-badge">BURNOUT DAY · FRIDAY</div>
+  <div class="day-title">🔥 High Rep Finisher</div>
+  <div class="day-subtitle">Focus: Pump & endurance · Rest 60 sec between sets</div>
 
-    day.waist && React.createElement("div", { style: { marginTop: 18 } },
-      React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: "#db2777", marginBottom: 10 } }, "💪 Waist Circuit"),
-      waistCircuit.map(function(ex, i) {
-        var key = dayIdx + "-" + phase + "-w" + i;
-        var isDone = !!checked[key];
-        return React.createElement("div", { key: i, onClick: function() { toggle(key); }, style: { background: isDone ? "#fdf2f8" : "white", border: "2px solid " + (isDone ? "#f9a8d4" : "#fce7f3"), borderRadius: 12, padding: "12px 14px", marginBottom: 10, cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" } },
-          React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
-            React.createElement("div", { style: { fontWeight: 700, fontSize: 14, color: isDone ? "#be185d" : "#111827" } }, (isDone ? "✅ " : "") + ex.name),
-            React.createElement("div", { style: { fontSize: 11, color: "#6b7280" } }, ex.sets + " sets · " + ex.reps)
-          ),
-          isHome && ex.homeNote && React.createElement("div", { style: { marginTop: 5, fontSize: 11, color: "#6b7280", fontStyle: "italic" } }, ex.homeNote)
-        );
-      })
-    ),
+  <div class="progress-bar"><div class="progress-fill" id="prog2" style="width:0%"></div></div>
+  <div class="progress-text" id="ptxt2">0 of 4 exercises done</div>
 
-    React.createElement("div", { style: { marginTop: 16, fontSize: 11, color: "#9ca3af", textAlign: "center" } }, "⭐ Never skip · 🟣 Hip width · Tap to check off")
-  );
-}
+  <div class="exercise" id="ex-2-0">
+    <div class="ex-header" onclick="toggleDetail('det-2-0')">
+      <div><div class="ex-name">🦵 Goblet Squat</div><div class="ex-sets">4 sets × 15 reps · 15 lb dumbbell</div></div>
+      <div class="ex-check" id="chk-2-0" onclick="checkEx(event,'2-0',2,4)">✓</div>
+    </div>
+    <div class="ex-detail" id="det-2-0">
+      <div class="anim-box">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="squat-body"></div>
+          <div class="squat-legs"><div class="squat-leg"></div><div class="squat-leg"></div></div>
+        </div>
+      </div>
+      <div class="how-to"><h4>How To</h4><ol>
+        <li>Hold dumbbell at chest, feet shoulder-width or slightly wider</li>
+        <li>Squat deep — push knees out as you go down</li>
+        <li>At the bottom, elbows push knees wider (goblet position)</li>
+        <li>Drive through full foot to stand — don't rise on toes</li>
+        <li>Higher reps today — feel the burn, keep perfect form</li>
+      </ol></div>
+      <button class="toggle-btn" onclick="checkEx(event,'2-0',2,4)">✅ Mark Done</button>
+    </div>
+  </div>
 
-ReactDOM.render(React.createElement(App), document.getElementById("root"));
-</script>
-</body>
-</html>
+  <div class="exercise" id="ex-2-1">
+    <div class="ex-head
