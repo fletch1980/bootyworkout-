@@ -3,245 +3,136 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bubble Butt Builder</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #0a0010; font-family: system-ui, sans-serif; }</style>
+  <style>* {box-sizing:border-box;margin:0;padding:0;} body{background:#0a0010;font-family:system-ui,sans-serif;}</style>
 </head>
 <body>
 <div id="root"></div>
+<script>
+var DAYS = [
+  { label:"MON", title:"🔥 Power Day", sub:"Heavy lifts · Rest 2-3 min", exercises:[
+    { name:"Barbell Hip Thrust", area:"Glutes", emoji:"🏋️", sets:"4 × 10-12", weights:["45 lb bar","65-75 lb","85-95 lb"], notes:"Upper back on bench, bar on hips. Drive through heels, squeeze hard at top.", tip:"Hold 1 full second at the top — that squeeze is where growth happens", howto:["Upper back rests on bench, padded bar across hips","Feet flat, hip-width, knees bent 90°","Drive through heels and thrust hips up","Squeeze glutes HARD at top — hold 1 second","Lower slowly — 3 counts down","Keep chin tucked, don't hyperextend lower back"] },
+    { name:"Romanian Deadlift", area:"Hamstrings & Glutes", emoji:"🏋️", sets:"3 × 10-12", weights:["20-25 lb dumbbells","30-35 lb","40-50 lb"], notes:"Hinge at hips, push butt back. Feel the hamstring stretch at the bottom.", tip:"Think: close the car door with your butt on the way back up", howto:["Stand holding dumbbells, slight knee bend","Hinge at HIPS — push butt backward, not downward","Lower along legs until strong hamstring stretch","Keep back flat the entire time","Squeeze glutes and drive hips forward to stand","The stretch at the bottom is where the magic happens"] },
+    { name:"Sumo Goblet Squat", area:"Inner Thighs & Glutes", emoji:"🦵", sets:"3 × 12-15", weights:["15-20 lb dumbbell","25-30 lb","35-40 lb"], notes:"Wide stance, toes out 45°. Sit DOWN between your legs — not back.", tip:"Press knees out with elbows at the bottom for a deeper stretch", howto:["Feet wider than shoulder-width, toes out 45°","Hold dumbbell vertically at chest","Sit DOWN between legs — different from regular squat","Chest tall, knees tracking over toes","Elbows press knees wider at the bottom","Drive through heels to stand, squeeze glutes at top"] },
+    { name:"Cable Kickback", area:"Glutes — Isolation", emoji:"🦶", sets:"3 × 15 each", weights:["15-20 lb","20-25 lb","25-35 lb"], notes:"Ankle strap on cable. Kick straight back — don't rotate your hip.", tip:"Slight forward lean and PAUSE at the top — the pause is everything", howto:["Ankle strap on cable at low setting","Face machine, hold bar, slight forward lean","Core tight, working leg slightly bent","Kick leg STRAIGHT back — not to the side","Squeeze glute hard at top, hold 1 second","Lower slowly, resist the cable on the way back"] },
+    { name:"Seated Abduction Machine", area:"Glute Medius", emoji:"↔️", sets:"3 × 20", weights:["Light-moderate","Moderate","Moderate-heavy"], notes:"Pads on outside of knees. Push OUT and hold 2 seconds.", tip:"Lean slightly forward to shift work to glute medius instead of TFL", howto:["Sit upright, pads against outside of knees","Feet flat, core engaged","Push legs OUT — slow and controlled","Hold open 2 full seconds","Squeeze outer glutes throughout","Return slowly — don't let weight crash back"] }
+  ]},
+  { label:"WED", title:"💜 Shape Day", sub:"Mind-muscle · Rest 90 sec", exercises:[
+    { name:"Bulgarian Split Squat", area:"Glutes & Quads", emoji:"🦵", sets:"3 × 10 each", weights:["10-15 lb dumbbells","20-25 lb","25-35 lb"], notes:"Back foot on bench. Drive through FRONT heel — feel it in your glute.", tip:"The further your front foot from the bench, the more glute activation", howto:["Back foot elevated on bench behind you","Front foot far enough that knee stays over ankle","Lower back knee toward floor, controlled","Drive through FRONT heel to stand","Feel this in your front glute? Perfect.","All reps one leg, then switch"] },
+    { name:"Hip Thrust — Pause Reps", area:"Glutes — Time Under Tension", emoji:"🏋️", sets:"4 × 8", weights:["35-45 lb","55-65 lb","70-80 lb"], notes:"Same as Monday but hold 3 full seconds at the top.", tip:"3 seconds feels like forever — count out loud if you have to", howto:["Same setup as Monday hip thrust","Use slightly less weight than Monday","Drive up and squeeze at top","Count: one thousand one, one thousand two, one thousand three","Only then lower slowly","8 reps with 3-sec holds beats 12 quick reps for growth"] },
+    { name:"Walking Lunges", area:"Glutes, Quads & Hips", emoji:"🚶", sets:"3 × 12 each", weights:["10-15 lb dumbbells","15-20 lb","20-25 lb"], notes:"Step forward, back knee near floor. Drive through front heel into next lunge.", tip:"The deeper the lunge, the more glute activation", howto:["Stand tall holding dumbbells at sides","Step forward into deep lunge","Lower back knee close to floor","Drive through FRONT heel to bring back foot forward","Step directly into next lunge — keep walking","Stay tall — don't let torso lean forward"] },
+    { name:"Banded Glute Bridge", area:"Glutes & Abductors", emoji:"🟣", sets:"3 × 20", weights:["Light band","Medium band","Heavy band"], notes:"Band above knees. Press knees OUT against band the entire time.", tip:"The band forces glute medius to work while glute max drives the bridge", howto:["Lie on back, band above knees, feet flat","Press knees OUT against band — maintain throughout","Drive hips up squeezing glutes hard","Hold top 1-2 seconds","Lower slowly without letting knees cave","Feel both inner and outer glutes working"] }
+  ]},
+  { label:"FRI", title:"🔥 Burnout Day", sub:"High reps · Rest 60 sec", exercises:[
+    { name:"Goblet Squat", area:"Quads & Glutes — High Rep", emoji:"🦵", sets:"4 × 15", weights:["15 lb dumbbell","20 lb","25 lb"], notes:"Higher reps today. Feel the burn — this is your metabolic finisher day.", tip:"On the last 3 reps, pause 2 seconds at the bottom", howto:["Hold dumbbell at chest, feet shoulder-width","Squat as deep as comfortable","Push knees out as you descend","Hold briefly at bottom — feel glutes loaded","Drive through full foot to stand","Squeeze glutes at top before next rep"] },
+    { name:"Side-Lying Clamshell", area:"Glute Medius — Outer Round", emoji:"↔️", sets:"3 × 20 each", weights:["Light band","Medium band","Heavy band"], notes:"Band above knees, feet together. Open top knee up — don't let pelvis rock.", tip:"Targets the side roundness — don't skip it just because it feels easy", howto:["Lie on side, band above knees","Hips stacked, knees bent 45°, feet together","Keep feet together, rotate top knee upward","Don't let pelvis roll backward","Hold open 2 seconds, squeeze outer glute","Lower slowly, complete reps then flip"] },
+    { name:"Donkey Kick", area:"Glutes — Isolation", emoji:"🦶", sets:"3 × 15 each", weights:["Bodyweight","5 lb ankle weight","8-10 lb ankle weight"], notes:"On all fours. Kick UP toward ceiling — sole faces up. Squeeze and hold.", tip:"Slow is more effective than fast — squeeze, don't rush", howto:["On all fours, wrists under shoulders","Keep knee bent 90° throughout","Kick leg UP toward ceiling — sole faces up","Squeeze glute HARD, hold 1-2 seconds","Keep hips square — don't rotate","Lower slowly, no resting between reps"] },
+    { name:"Single-Leg Glute Bridge", area:"Glutes — Finisher", emoji:"🏋️", sets:"3 × 12 each", weights:["Bodyweight","Bodyweight + 10 lb plate","Bodyweight + 15-20 lb"], notes:"One foot flat, other leg extended. Drive through planted heel.", tip:"This is the finisher — go until you feel the full burn in each glute", howto:["Lie on back, one foot flat, other leg extended up","Keep extended leg at about 45°","Drive through planted heel to lift hips","Squeeze working glute as hard as possible","Keep hips level — don't let unsupported side drop","Lower slowly, repeat, then switch legs"] }
+  ]},
+  { label:"WARM UP", title:"🌡️ Activation", sub:"Before EVERY session · 8-10 min", exercises:[
+    { name:"Banded Lateral Walk", area:"Glute Medius Activation", emoji:"🟣", sets:"2 × 15 steps each way", weights:["Light band","Light-medium","Medium"], notes:"Band above knees, slight squat position. Keep tension on band always.", tip:"Don't let feet come together — constant tension = constant activation", howto:["Band just above knees","Stand in slight squat position — stay low","Step sideways, never let feet fully meet","15 steps right, 15 back left = 1 set","Torso upright, core engaged","Directly activates glute medius before your workout"] },
+    { name:"Bodyweight Glute Bridge", area:"Glute Max Activation", emoji:"🦵", sets:"2 × 15", weights:["Bodyweight","Bodyweight","BW + light band"], notes:"Focus on FEELING your glutes work. This is activation — not a workout.", tip:"Touch your glutes before the set — neural cue increases activation", howto:["Lie on back, feet flat, knees bent","Touch your glutes to create a neural cue","Drive hips up and SQUEEZE hard at top","Hold 2 full seconds — feel the contraction","Lower slowly and repeat","If you feel hamstrings more than glutes, bring feet slightly closer"] },
+    { name:"Banded Clamshell", area:"Glute Medius Activation", emoji:"↔️", sets:"2 × 15 each", weights:["Light band","Light band","Light-medium"], notes:"Side-lying, feet together. Open knee — pelvis stays completely still.", tip:"If your hip rocks, the band is too heavy", howto:["Lie on side, band above knees","Hips stacked, knees bent 45°, feet together","Keep pelvis absolutely still","Rotate top knee upward — feet stay together","Hold open 1-2 seconds at top","Lower slowly, complete all reps, switch sides"] },
+    { name:"Hip Circle", area:"Hip Joint Warm-Up", emoji:"🦶", sets:"10 each direction, each leg", weights:["Bodyweight","Bodyweight","Bodyweight"], notes:"On all fours, draw big circles with one knee. Slow and full range.", tip:"The bigger and slower, the better — lubricating the joint", howto:["On all fours, wrists under shoulders","Bring one knee up and out to side","Draw large slow circle — forward, up, back, down","Make circle as big as comfortable","10 forward, 10 backward, switch legs","Especially important for joint health post-bypass"] }
+  ]}
+];
+
+var TIPS = [
+  { emoji:"🍑", title:"Progressive Overload", body:"Every 1-2 weeks, add 5 lbs OR 2 reps. Glutes need to be challenged to grow — same weight every week = no growth." },
+  { emoji:"💊", title:"Post-Bypass Protein", body:"60-80g daily minimum. Prioritize protein at every meal. Muscles cannot grow without it — non-negotiable." },
+  { emoji:"🧠", title:"Mind-Muscle Connection", body:"Before every set, touch your glutes and consciously squeeze them. This neural cue alone increases activation by 20-30%." },
+  { emoji:"💤", title:"Sleep = Growth", body:"Glutes grow while you sleep. 7-8 hours of sleep is part of your program — not optional." },
+  { emoji:"🩺", title:"Post-Bypass Note", body:"Start lighter than you think. Joints need 4-6 weeks to adapt even when movement feels easy. Increase weight gradually." },
+  { emoji:"⏱", title:"12-Week Timeline", body:"Weeks 1-4: Learn movements. Weeks 5-8: Add weight. Weeks 9-12: Visible shape change. Commit to the full program." }
+];
+</script>
 <script type="text/babel">
 var useState = React.useState;
-var phaseLabels = ["Weeks 1-4","Weeks 5-8","Weeks 9-12"];
 
-var mondayExercises = [
-  {
-    name: "Barbell Hip Thrust", area: "Glutes — Primary", emoji: "🏋️",
-    weights: ["45 lb bar", "65–75 lb bar", "85–95 lb bar"],
-    sets: "4 sets × 10–12 reps",
-    notes: "Upper back on bench, bar across hips with pad. Drive through heels, squeeze hard at top.",
-    tip: "Hold 1 full second at the top — that squeeze is where the growth happens",
-    howto: ["Upper back rests on the bench, bar sits across your hips with the pad", "Feet flat on floor, hip-width apart, knees bent about 90°", "Drive through your heels and thrust hips up toward the ceiling", "Squeeze your glutes HARD at the top — hold for 1 second", "Lower slowly — 3 counts down — don't crash the weight", "Keep your chin tucked, don't hyperextend your lower back"]
-  },
-  {
-    name: "Romanian Deadlift", area: "Hamstrings & Glutes", emoji: "🏋️",
-    weights: ["20–25 lb dumbbells", "30–35 lb dumbbells", "40–50 lb dumbbells"],
-    sets: "3 sets × 10–12 reps",
-    notes: "Hinge at hips, push butt back. Feel the hamstring stretch at the bottom.",
-    tip: "Think: close the car door with your butt on the way back up",
-    howto: ["Stand holding dumbbells in front of your thighs, slight knee bend", "Hinge at the HIPS — push your butt backward, not downward", "Lower the weights along your legs until you feel a strong hamstring stretch", "Keep your back flat the entire time — no rounding", "Squeeze your glutes and drive hips forward to return to standing", "The stretch at the bottom is where the magic happens — don't rush through it"]
-  },
-  {
-    name: "Sumo Goblet Squat", area: "Inner Thighs & Glutes", emoji: "🦵",
-    weights: ["15–20 lb dumbbell", "25–30 lb dumbbell", "35–40 lb dumbbell"],
-    sets: "3 sets × 12–15 reps",
-    notes: "Wide stance, toes out 45°. Sit DOWN between your legs — not back.",
-    tip: "Press your knees out with your elbows at the bottom for a deeper stretch",
-    howto: ["Stand with feet wider than shoulder-width, toes pointed out about 45°", "Hold one dumbbell vertically at your chest with both hands", "Sit DOWN between your legs — this is different from a regular squat", "Keep your chest tall and your knees tracking over your toes", "At the bottom, use your elbows to press your knees out wider", "Drive through your heels to stand, squeezing glutes at the top"]
-  },
-  {
-    name: "Cable Kickback", area: "Glutes — Isolation", emoji: "🦶",
-    weights: ["15–20 lb", "20–25 lb", "25–35 lb"],
-    sets: "3 sets × 15 reps each leg",
-    notes: "Ankle strap on cable machine. Kick straight back — don't rotate your hip.",
-    tip: "Slight forward lean and PAUSE at the top — the pause is everything",
-    howto: ["Attach ankle strap to cable machine at low setting", "Face the machine, hold the bar for balance, slight forward lean", "Keep your core tight and your working leg slightly bent", "Kick your leg STRAIGHT back — not out to the side", "Squeeze your glute hard at the top and hold for 1 second", "Lower slowly — resist the cable on the way back down", "Complete all reps one leg, then switch"]
-  },
-  {
-    name: "Seated Abduction Machine", area: "Glute Medius — Outer", emoji: "↔️",
-    weights: ["Light-moderate", "Moderate", "Moderate-heavy"],
-    sets: "3 sets × 20 reps",
-    notes: "Pads on outside of knees. Push OUT and hold. Lean forward slightly for more glute.",
-    tip: "Leaning slightly forward shifts the work from your TFL to your glute medius",
-    howto: ["Sit upright in the abduction machine, pads against outside of knees", "Feet flat on the platform, core engaged", "Push your legs OUT against the pads — slow and controlled", "Hold the open position for 2 full seconds", "Squeeze your outer glutes the entire time", "Return slowly — don't let the weight crash back", "For more glute activation: lean your torso slightly forward"]
-  }
-];
-
-var wednesdayExercises = [
-  {
-    name: "Bulgarian Split Squat", area: "Glutes & Quads", emoji: "🦵",
-    weights: ["10–15 lb dumbbells", "20–25 lb dumbbells", "25–35 lb dumbbells"],
-    sets: "3 sets × 10 reps each leg",
-    notes: "Back foot elevated on bench. Drive through FRONT heel — feel it in your glute.",
-    tip: "The further your front foot is from the bench, the more glute activation",
-    howto: ["Stand in front of a bench, reach one foot back and rest it on top", "Your front foot should be far enough forward that your knee stays over your ankle", "Lower your back knee toward the floor — control the descent", "Drive through your FRONT heel to push yourself back up", "You should feel this almost entirely in your front glute and quad", "Do all reps on one leg, then switch — your weaker side will be obvious"]
-  },
-  {
-    name: "Hip Thrust — Pause Reps", area: "Glutes — Time Under Tension", emoji: "🏋️",
-    weights: ["35–45 lb bar", "55–65 lb bar", "70–80 lb bar"],
-    sets: "4 sets × 8 reps",
-    notes: "Same as Monday but hold 3 full seconds at the top. Less weight, more burn.",
-    tip: "3 seconds feels like forever — count out loud if you have to",
-    howto: ["Set up exactly like Monday hip thrust", "Use slightly less weight than Monday to account for the holds", "Drive up and squeeze at the top", "COUNT: one thousand one, one thousand two, one thousand three", "Only then lower slowly back down", "8 reps with 3-second holds beats 12 reps with no holds for growth"]
-  },
-  {
-    name: "Walking Lunges", area: "Glutes, Quads & Hip Flexors", emoji: "🚶",
-    weights: ["10–15 lb dumbbells", "15–20 lb dumbbells", "20–25 lb dumbbells"],
-    sets: "3 sets × 12 reps each leg",
-    notes: "Step forward, back knee near floor. Drive through front heel to step into next lunge.",
-    tip: "The deeper the lunge, the more glute activation — work toward full range over time",
-    howto: ["Stand tall holding dumbbells at your sides", "Step forward with one foot into a deep lunge", "Lower your back knee close to (but not touching) the floor", "Drive through your FRONT heel to bring your back foot forward", "Step directly into the next lunge — keep walking forward", "Stay tall — don't let your torso lean forward as you fatigue"]
-  },
-  {
-    name: "Banded Glute Bridge", area: "Glutes & Abductors", emoji: "🟣",
-    weights: ["Light band", "Medium band", "Heavy band"],
-    sets: "3 sets × 20 reps",
-    notes: "Band just above knees. Press knees OUT against band the entire time.",
-    tip: "The band forces your glute medius to work while your glute max drives the bridge",
-    howto: ["Lie on your back, knees bent, feet flat on floor hip-width apart", "Place resistance band just above your knees", "Press your knees OUT against the band — maintain this outward pressure throughout", "Drive your hips up toward the ceiling, squeezing glutes hard", "Hold at the top for 1–2 seconds", "Lower slowly without letting the knees cave inward", "Feel both the inner and outer glutes working simultaneously"]
-  }
-];
-
-var fridayExercises = [
-  {
-    name: "Goblet Squat", area: "Quads & Glutes — High Rep", emoji: "🦵",
-    weights: ["15 lb dumbbell", "20 lb dumbbell", "25 lb dumbbell"],
-    sets: "4 sets × 15 reps",
-    notes: "Higher reps today. Feel the burn — this is your metabolic finisher day.",
-    tip: "On the last 3 reps of each set, pause for 2 seconds at the bottom",
-    howto: ["Hold dumbbell at chest, feet shoulder-width or slightly wider", "Squat as deep as comfortable — ideally hips below parallel", "Push knees outward as you descend", "At the bottom, hold briefly — feel your glutes loaded", "Drive through your full foot to stand", "Squeeze glutes at the top before the next rep"]
-  },
-  {
-    name: "Side-Lying Clamshell", area: "Glute Medius — Outer Round", emoji: "↔️",
-    weights: ["Light band", "Medium band", "Heavy band"],
-    sets: "3 sets × 20 reps each side",
-    notes: "Band above knees, feet together. Open top knee up — don't let pelvis rock.",
-    tip: "This targets the side roundness — don't skip it just because it feels easy",
-    howto: ["Lie on your side with a band above your knees", "Hips stacked, knees bent about 45°, feet together", "Keep your feet together and rotate your top knee upward like a clamshell opening", "Don't let your pelvis roll backward — that's cheating", "Hold open for 2 seconds — squeeze the outer glute", "Lower slowly back to start", "Do all reps on one side, then flip and repeat"]
-  },
-  {
-    name: "Donkey Kick", area: "Glutes — Isolation & Burn", emoji: "🦶",
-    weights: ["Bodyweight", "5 lb ankle weight", "8–10 lb ankle weight"],
-    sets: "3 sets × 15 reps each leg",
-    notes: "On all fours. Kick UP toward ceiling — sole faces up. Squeeze and hold.",
-    tip: "Slow is more effective than fast — this is about squeeze, not speed",
-    howto: ["Start on all fours — wrists directly under shoulders, knees under hips", "Keep your knee bent at 90° throughout the movement", "Kick one leg UP toward the ceiling — sole of foot faces the ceiling at the top", "Squeeze your glute HARD at the top and hold for 1–2 seconds", "Keep your hips square — don't rotate to get more range", "Lower slowly and repeat — no resting between reps", "Complete all reps on one leg, then switch"]
-  },
-  {
-    name: "Single-Leg Glute Bridge", area: "Glutes — Unilateral Finisher", emoji: "🏋️",
-    weights: ["Bodyweight", "Bodyweight + 10 lb plate", "Bodyweight + 15–20 lb plate"],
-    sets: "3 sets × 12 reps each leg",
-    notes: "One foot flat, other leg extended. Drive through planted heel — don't let hips tilt.",
-    tip: "This is the finisher — go until you feel the full burn in each glute",
-    howto: ["Lie on your back, one foot flat on floor, other leg extended straight up", "Keep your extended leg at about 45° — don't let it drop too low", "Drive through your planted heel to lift your hips", "Squeeze the working glute as hard as you can at the top", "Keep your hips level — don't let the unsupported side drop", "Lower slowly, repeat, then switch legs", "You should feel a significant burn by rep 10 — that's the goal"]
-  }
-];
-
-var warmupExercises = [
-  {
-    name: "Banded Lateral Walk", area: "Glute Medius Activation", emoji: "🟣",
-    weights: ["Light band", "Light-medium band", "Medium band"],
-    sets: "2 sets × 15 steps each direction",
-    notes: "Band above knees, slight squat position. Keep tension on band the whole time.",
-    tip: "Don't let feet come together fully — constant tension = constant activation",
-    howto: ["Place band just above your knees", "Stand in a slight squat position — stay low throughout", "Step sideways maintaining band tension — don't let feet come fully together", "15 steps to the right, then 15 steps back to the left = 1 set", "Keep your torso upright and core engaged", "This directly activates the glute medius before your workout"]
-  },
-  {
-    name: "Bodyweight Glute Bridge", area: "Glute Max Activation", emoji: "🦵",
-    weights: ["Bodyweight", "Bodyweight", "Bodyweight + light band"],
-    sets: "2 sets × 15 reps",
-    notes: "Focus on FEELING your glutes work. This is activation — not a workout.",
-    tip: "Touch your glutes before the set — this neural cue increases activation",
-    howto: ["Lie on your back, feet flat, knees bent", "Before starting: reach back and touch your glutes to create a neural cue", "Drive your hips up and SQUEEZE your glutes hard at the top", "Hold for 2 full seconds — really feel the contraction", "Lower slowly and repeat", "If you feel this more in your hamstrings than glutes, bring feet slightly closer to your body"]
-  },
-  {
-    name: "Banded Clamshell", area: "Glute Medius Activation", emoji: "↔️",
-    weights: ["Light band", "Light band", "Light-medium band"],
-    sets: "2 sets × 15 reps each side",
-    notes: "Side-lying, feet together. Open knee up — pelvis stays completely still.",
-    tip: "Only the knee moves — if your hip rocks, the band is too heavy",
-    howto: ["Lie on your side with band above knees", "Hips stacked, knees bent 45°, feet together", "Keep your pelvis absolutely still", "Rotate your top knee upward — feet stay together", "Hold open for 1–2 seconds at the top", "Lower slowly, repeat all reps, then switch sides"]
-  },
-  {
-    name: "Hip Circle", area: "Hip Joint Warm-Up", emoji: "🦶",
-    weights: ["Bodyweight", "Bodyweight", "Bodyweight"],
-    sets: "10 circles each direction, each leg",
-    notes: "On all fours, draw big circles with one knee. Move slowly and with full range.",
-    tip: "The bigger and slower, the better — you're lubricating the joint",
-    howto: ["Start on all fours, wrists under shoulders, knees under hips", "Bring one knee up and out to the side", "Draw a large slow circle with that knee — forward, up, back, down", "Make the circle as big as comfortable", "10 circles forward, 10 circles backward, then switch legs", "This is especially important for joint health post-bypass"]
-  }
-];
-
-var days = [
-  { label: "MON", title: "🔥 Power Day", sub: "Heavy compound lifts · Rest 2–3 min between sets", exercises: mondayExercises },
-  { label: "WED", title: "💜 Shape Day", sub: "Mind-muscle focus · Rest 90 sec between sets", exercises: wednesdayExercises },
-  { label: "FRI", title: "🔥 Burnout Day", sub: "High reps · Rest 60 sec between sets", exercises: fridayExercises },
-  { label: "WARM UP", title: "🌡️ Activation", sub: "Do before EVERY session · 8–10 minutes", exercises: warmupExercises }
-];
-
-var tips = [
-  { emoji: "🍑", title: "Progressive Overload", body: "Every 1–2 weeks, add 5 lbs OR 2 reps. Your glutes need to be challenged to grow — same weight every week = no growth." },
-  { emoji: "💊", title: "Post-Bypass Protein", body: "60–80g daily minimum. Prioritize protein at every meal. Muscles cannot grow without adequate protein — this is non-negotiable." },
-  { emoji: "🧠", title: "Mind-Muscle Connection", body: "Before every set, touch your glutes and consciously squeeze them. This neural cue alone increases activation by 20–30%." },
-  { emoji: "💤", title: "Sleep = Growth", body: "Glutes grow while you sleep, not in the gym. 7–8 hours of sleep is part of your program — not optional." },
-  { emoji: "🩺", title: "Post-Bypass Note", body: "Start lighter than you think you need to. Joints and connective tissue need 4–6 weeks to adapt even when cardio feels easy. Increase weight gradually." },
-  { emoji: "⏱", title: "12-Week Timeline", body: "Weeks 1–4: Learn the movements. Weeks 5–8: Add weight, feel difference. Weeks 9–12: Visible shape change. Commit to the full program." }
-];
-
-function ExerciseCard(props) {
-  var ex = props.ex; var phase = props.phase; var checkKey = props.checkKey; var expandKey = props.expandKey;
-  var isDone = props.isDone; var isExpanded = props.isExpanded;
-  var onCheck = props.onCheck; var onExpand = props.onExpand;
-
-  return React.createElement("div", { style: { background: isDone ? "#0f1f0f" : "#1a0030", border: "2px solid " + (isDone ? "#166534" : "#3b0764"), borderRadius: 12, padding: "14px 16px", marginBottom: 12 } },
-    React.createElement("div", { onClick: onCheck, style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, cursor: "pointer" } },
-      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
-        React.createElement("span", { style: { fontSize: 20 } }, ex.emoji),
+function Card(props) {
+  var ex = props.ex, phase = props.phase, isDone = props.isDone, isOpen = props.isOpen;
+  return React.createElement("div", { style:{background:isDone?"#0f1f0f":"#1a0030",border:"2px solid "+(isDone?"#166534":"#3b0764"),borderRadius:12,padding:"14px 16px",marginBottom:12} },
+    React.createElement("div", { onClick:props.onCheck, style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,cursor:"pointer"} },
+      React.createElement("div", { style:{display:"flex",alignItems:"center",gap:8} },
+        React.createElement("span", { style:{fontSize:20} }, ex.emoji),
         React.createElement("div", null,
-          React.createElement("div", { style: { fontWeight: 700, fontSize: 14, color: isDone ? "#4ade80" : "white" } }, (isDone ? "✅ " : "") + ex.name),
-          React.createElement("div", { style: { fontSize: 11, color: "#7c3aed", fontWeight: 600, marginTop: 2 } }, ex.area)
+          React.createElement("div", { style:{fontWeight:700,fontSize:14,color:isDone?"#4ade80":"white"} }, (isDone?"✅ ":"")+ex.name),
+          React.createElement("div", { style:{fontSize:11,color:"#7c3aed",fontWeight:600,marginTop:2} }, ex.area)
         )
       ),
-      React.createElement("div", { style: { fontSize: 11, color: "#6b7280", textAlign: "right" } },
+      React.createElement("div", { style:{fontSize:11,color:"#6b7280",textAlign:"right"} },
         ex.sets, React.createElement("br"),
-        React.createElement("span", { style: { color: "#c084fc", fontWeight: 700 } }, ex.weights[phase])
+        React.createElement("span", { style:{color:"#c084fc",fontWeight:700} }, ex.weights[phase])
       )
     ),
-    React.createElement("div", { style: { fontSize: 12, color: "#9ca3af", lineHeight: 1.5, marginBottom: 8 } }, ex.notes),
-    React.createElement("div", { style: { background: "#0a0010", borderRadius: 8, padding: "6px 10px", fontSize: 11, color: "#c084fc", fontStyle: "italic", marginBottom: 10 } }, "💡 " + ex.tip),
-    React.createElement("button", { onClick: onExpand, style: { background: isExpanded ? "#3b0764" : "#0a0010", border: "1px solid #3b0764", borderRadius: 8, padding: "6px 14px", fontSize: 12, color: "#a78bfa", fontWeight: 700, cursor: "pointer", width: "100%" } },
-      isExpanded ? "▲ Hide How To" : "▼ How To"
-    ),
-    isExpanded && React.createElement("div", { style: { marginTop: 10, background: "#0a0010", borderRadius: 8, padding: "12px 14px" } },
-      ex.howto.map(function(step, s) {
-        return React.createElement("div", { key: s, style: { display: "flex", gap: 10, marginBottom: 8 } },
-          React.createElement("span", { style: { color: "#7c3aed", fontWeight: 800, fontSize: 13, minWidth: 20 } }, (s + 1) + "."),
-          React.createElement("span", { style: { color: "#e2e8f0", fontSize: 12, lineHeight: 1.5 } }, step)
-        );
-      })
+    React.createElement("div", { style:{fontSize:12,color:"#9ca3af",lineHeight:1.5,marginBottom:8} }, ex.notes),
+    React.createElement("div", { style:{background:"#0a0010",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#c084fc",fontStyle:"italic",marginBottom:10} }, "💡 "+ex.tip),
+    React.createElement("button", { onClick:props.onExpand, style:{background:isOpen?"#3b0764":"#0a0010",border:"1px solid #3b0764",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#a78bfa",fontWeight:700,cursor:"pointer",width:"100%"} }, isOpen?"▲ Hide How To":"▼ How To"),
+    isOpen && React.createElement("div", { style:{marginTop:10,background:"#0a0010",borderRadius:8,padding:"12px 14px"} },
+      ex.howto.map(function(step,s){ return React.createElement("div",{key:s,style:{display:"flex",gap:10,marginBottom:8}}, React.createElement("span",{style:{color:"#7c3aed",fontWeight:800,fontSize:13,minWidth:20}},(s+1)+"."), React.createElement("span",{style:{color:"#e2e8f0",fontSize:12,lineHeight:1.5}},step)); })
     )
   );
 }
 
 function App() {
-  var s1 = useState(0); var dayIdx = s1[0]; var setDayIdx = s1[1];
-  var s2 = useState(4); var tab = s2[0]; var setTab = s2[1]; // 4 = tips
-  var s3 = useState(0); var phase = s3[0]; var setPhase = s3[1];
-  var s4 = useState({}); var checked = s4[0]; var setChecked = s4[1];
-  var s5 = useState({}); var expanded = s5[0]; var setExpanded = s5[1];
+  var t = useState(0); var tab = t[0]; var setTab = t[1];
+  var p = useState(0); var phase = p[0]; var setPhase = p[1];
+  var c = useState({}); var checked = c[0]; var setChecked = c[1];
+  var e = useState({}); var expanded = e[0]; var setExpanded = e[1];
 
-  var isDay = tab < 4;
-  var currentDay = isDay ? days[tab] : null;
-  var exercises = currentDay ? currentDay.exercises : [];
-  var done = exercises.filter(function(_, i) { return !!checked[tab+"-"+phase+"-"+i]; }).length;
-  var total = exercises.length;
-  var pct = total > 0 ? (done / total) * 100 : 0;
+  var isDay = tab < DAYS.length;
+  var day = isDay ? DAYS[tab] : null;
+  var exs = day ? day.exercises : [];
+  var done = exs.filter(function(_,i){ return !!checked[tab+"-"+phase+"-"+i]; }).length;
+  var pct = exs.length > 0 ? (done/exs.length)*100 : 0;
 
-  function toggleCheck(key) { setChecked(function(p) { var n = Object.assign({}, p); n[key] = !p[key]; return n; }); }
-  function toggleExpand(key) { setExpanded(function(p) { var n = Object.assign({}, p); n[key] = !p[key]; return n; }); }
+  function ck(key){ setChecked(function(prev){ var n=Object.assign({},prev); n[key]=!prev[key]; return n; }); }
+  function ek(key){ setExpanded(function(prev){ var n=Object.assign({},prev); n[key]=!prev[key]; return n; }); }
 
-  return React.createElement("div", { style: { fontFamily: "system-ui, sans-serif", maxWidth: 460, margin: "0 auto", padding: 16, backgroundColor: "#0a0010", minHeight: "100vh" } },
+  return React.createElement("div", { style:{fontFamily:"system-ui,sans-serif",maxWidth:460,margin:"0 auto",padding:16,backgroundColor:"#0a0010",minHeight:"100vh"} },
 
-    React.createElement("div", { style: { background: "linear-gradient(135deg, #7c1a4a, #c44dff)", borderRadius: 14, padding: "18px 20px", color: "white", marginBottom: 16 } },
-      React.createElement("div", { style: { fontSize: 22, fontWeight: 800 } }, "🍑 Bubble Butt Builder"),
-      React.createElement("div", { style: { fontSize: 13, opacity: 0.9, marginTop: 2 } }, "3 Days/Week · 12-Week Glute Growth Program"),
+    React.createElement("div", { style:{background:"linear-gradient(135deg,#7c1a4a,#c44dff)",borderRadius:14,padding:"18px 20px",color:"white",marginBottom:16} },
+      React.createElement("div", { style:{fontSize:22,fontWeight:800} }, "🍑 Bubble Butt Builder"),
+      React.createElement("div", { style:{fontSize:13,opacity:0.9,marginTop:2} }, "3 Days/Week · 12-Week Glute Growth Program"),
       isDay && React.createElement("div", null,
-        React.createElement("div", { style: { marginTop: 10, background: "rgba(255,255,255,0.25)", borderRadius: 8, height: 8 } },
-          React.createElement("div", { style: { background: "white", borderRadius: 8, height: 8, width: pct + "%", transition: "width 0.3s" } })
+        React.createElement("div", { style:{marginTop:10,background:"rgba(255,255,255,0.25)",borderRadius:8,height:8} },
+          React.createElement("div", { style:{background:"white",borderRadius:8,height:8,width:pct+"%",transition:"width 0.3s"} })
         ),
-        React.createElement("div", { style: { fontSize: 12, opacity: 0.85, marginTop: 4 } }, done + " of " + total + " complete" + (done === total && total > 0 ? " 🔥 SESSION DONE!" : ""))
+        React.createElement("div", { style:{fontSize:12,opacity:0.85,marginTop:4} }, done+" of "+exs.length+" complete"+(done===exs.length&&exs.length>0?" 🔥 DONE!":""))
       )
     ),
 
-    React.createElement("div", { style: { display: "flex", background: "#1a0030", borderRadius: 10, padding: 4, marginB
+    React.createElement("div", { style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:12,gap:4} },
+      DAYS.map(function(d,i){ return React.createElement("button",{key:i,onClick:function(){setTab(i);},style:{flex:1,padding:"8px 2px",borderRadius:8,border:"none",cursor:"pointer",fontSize:10,fontWeight:700,background:tab===i?"#7c3aed":"transparent",color:tab===i?"white":"#9ca3af"}},d.label); }),
+      React.createElement("button", { onClick:function(){setTab(DAYS.length);}, style:{flex:1,padding:"8px 2px",borderRadius:8,border:"none",cursor:"pointer",fontSize:10,fontWeight:700,background:tab===DAYS.length?"#7c3aed":"transparent",color:tab===DAYS.length?"white":"#9ca3af"} }, "TIPS")
+    ),
+
+    React.createElement("div", { style:{marginBottom:14} },
+      React.createElement("div", { style:{fontSize:11,fontWeight:700,color:"#6b7280",marginBottom:6,letterSpacing:1} }, "PHASE"),
+      React.createElement("div", { style:{display:"flex",gap:8} },
+        ["Weeks 1-4","Weeks 5-8","Weeks 9-12"].map(function(l,i){ return React.createElement("button",{key:i,onClick:function(){setPhase(i);setChecked({});},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:phase===i?"#7c3aed":"#1a0030",color:phase===i?"white":"#9ca3af"}},l); })
+      )
+    ),
+
+    isDay && React.createElement("div", null,
+      React.createElement("div", { style:{background:"#1a0030",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#a78bfa",marginBottom:14,fontWeight:600} }, day.title+" · "+day.sub),
+      exs.map(function(ex,i){
+        var ckey=tab+"-"+phase+"-"+i, ekey=tab+"-e-"+i;
+        return React.createElement(Card,{key:i,ex:ex,phase:phase,isDone:!!checked[ckey],isOpen:!!expanded[ekey],onCheck:function(){ck(ckey);},onExpand:function(ev){ev.stopPropagation();ek(ekey);}});
+      })
+    ),
+
+    tab===DAYS.length && React.createElement("div", null,
+      React.createElement("div", { style:{fontSize:13,fontWeight:700,color:"#c084fc",marginBottom:12} }, "Your Glute Growth Guide"),
+      TIPS.map(function(t,i){ return React.createElement("div",{key:i,style:{background:"#1a0030",border:"1px solid #3b0764",borderRadius:12,padding:"12px 14px",marginBottom:10}}, React.createElement("div",{style:{display:"flex",gap:10,alignItems:"flex-start"}}, React.createElement("span",{style:{fontSize:20}},t.emoji), React.createElement("div",null, React.createElement("div",{style:{fontWeight:700,fontSize:13,color:"white",marginBottom:4}},t.title), React.createElement("div",{style:{fontSize:12,color:"#9ca3af",lineHeight:1.5}},t.body)))); }),
+      React.createElement("div", { style:{marginTop:16,background:"#1a0030",borderRadius:10,padding:"14px 16px",fontSize:12,color:"#c084fc",fontWeight:600,textAlign:"center",border:"1px solid #3b0764"} }, "🍑 Consistency over intensity. Show up 3x a week and your body will transform.")
+    )
+  );
+}
+
+ReactDOM.render(React.createElement(App), document.getElementById("root"));
+</script>
+</body>
+</html>
