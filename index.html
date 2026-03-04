@@ -136,27 +136,6 @@ function App() {
 }
 
 ReactDOM.render(React.createElement(App, null), document.getElementById("root"));
-// ============================================================
-// GLUTE FINISHER — paste just above closing </script>
-// ============================================================
-(function() {
-  const gluteMap = { 1:"MON", 2:"WED", 3:"WED", 4:"FRI", 5:"FRI" };
-  const target = gluteMap[new Date().getDay()];
-  if (!target) return;
-
-  const interval = setInterval(function() {
-    const buttons = document.querySelectorAll("button");
-    buttons.forEach(function(btn) {
-      if (btn.textContent.trim() === target) {
-        btn.click();
-        clearInterval(interval);
-      }
-    });
-  }, 100);
-
-  // Stop trying after 5 seconds
-  setTimeout(function() { clearInterval(interval); }, 5000);
-})();
 </script>
 </body>
 </html>
