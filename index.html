@@ -144,13 +144,13 @@ ReactDOM.render(React.createElement(App, null), document.getElementById("root"))
 // Maps Sunday=0 through Saturday=6 to your tab day names
 // Change the values to match your app's exact tab labels
 const dayTabMap = {
-  1: "Monday",     // Power Day
-  2: "Tuesday",    // Shape Day
-  3: "Wednesday",  // Burnout Day
-  4: "Thursday",   // Unilateral Day
-  5: "Friday",     // Full Glute Day
-  6: null,         // Saturday — no tab, stays on default
-  0: null          // Sunday  — no tab, stays on default
+  1: "MON",   // Power Day
+  2: "WED",   // Shape Day  — NOTE: app only has MON/WED/FRI, see below
+  3: "WED",   // Burnout Day
+  4: "FRI",   // Unilateral Day
+  5: "FRI",   // Full Glute Day
+  6: null,    // Saturday — no tab, stays on default
+  0: null     // Sunday  — no tab, stays on default
 };
 
 window.addEventListener("DOMContentLoaded", function () {
