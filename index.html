@@ -136,38 +136,27 @@ function App() {
 }
 
 ReactDOM.render(React.createElement(App, null), document.getElementById("root"));
-  // ============================================================
-// AUTO-DAY SNIPPET
-// Paste this just before the closing </script> tag in each app
 // ============================================================
+// GLUTE FINISHER — paste just above closing </script>
+// ============================================================
+(function() {
+  const gluteMap = { 1:"MON", 2:"WED", 3:"WED", 4:"FRI", 5:"FRI" };
+  const target = gluteMap[new Date().getDay()];
+  if (!target) return;
 
-// Maps Sunday=0 through Saturday=6 to your tab day names
-// Change the values to match your app's exact tab labels
-const dayTabMap = {
-  1: "MON",   // Power Day
-  2: "WED",   // Shape Day  — NOTE: app only has MON/WED/FRI, see below
-  3: "WED",   // Burnout Day
-  4: "FRI",   // Unilateral Day
-  5: "FRI",   // Full Glute Day
-  6: null,    // Saturday — no tab, stays on default
-  0: null     // Sunday  — no tab, stays on default
-};
+  const interval = setInterval(function() {
+    const buttons = document.querySelectorAll("button");
+    buttons.forEach(function(btn) {
+      if (btn.textContent.trim() === target) {
+        btn.click();
+        clearInterval(interval);
+      }
+    });
+  }, 100);
 
-window.addEventListener("DOMContentLoaded", function () {
-  const todayDow = new Date().getDay();       // 0=Sun … 6=Sat
-  const todayTab = dayTabMap[todayDow];
-
-  if (!todayTab) return; // weekend = do nothing
-
-  // Find the button whose text content matches the day name
-  // Works for both React and plain HTML tab buttons
-  const buttons = document.querySelectorAll("button");
-  buttons.forEach(function (btn) {
-    if (btn.textContent.trim().startsWith(todayTab)) {
-      btn.click(); // simulate a tap on the correct day tab
-    }
-  });
-});
+  // Stop trying after 5 seconds
+  setTimeout(function() { clearInterval(interval); }, 5000);
+})();
 </script>
 </body>
 </html>
