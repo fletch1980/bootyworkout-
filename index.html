@@ -136,6 +136,38 @@ function App() {
 }
 
 ReactDOM.render(React.createElement(App, null), document.getElementById("root"));
+  // ============================================================
+// AUTO-DAY SNIPPET
+// Paste this just before the closing </script> tag in each app
+// ============================================================
+
+// Maps Sunday=0 through Saturday=6 to your tab day names
+// Change the values to match your app's exact tab labels
+const dayTabMap = {
+  1: "Monday",     // Power Day
+  2: "Tuesday",    // Shape Day
+  3: "Wednesday",  // Burnout Day
+  4: "Thursday",   // Unilateral Day
+  5: "Friday",     // Full Glute Day
+  6: null,         // Saturday — no tab, stays on default
+  0: null          // Sunday  — no tab, stays on default
+};
+
+window.addEventListener("DOMContentLoaded", function () {
+  const todayDow = new Date().getDay();       // 0=Sun … 6=Sat
+  const todayTab = dayTabMap[todayDow];
+
+  if (!todayTab) return; // weekend = do nothing
+
+  // Find the button whose text content matches the day name
+  // Works for both React and plain HTML tab buttons
+  const buttons = document.querySelectorAll("button");
+  buttons.forEach(function (btn) {
+    if (btn.textContent.trim().startsWith(todayTab)) {
+      btn.click(); // simulate a tap on the correct day tab
+    }
+  });
+});
 </script>
 </body>
 </html>
