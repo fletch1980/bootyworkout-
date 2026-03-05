@@ -44,8 +44,46 @@ function getRestDayNotice() {
 }
 
 function todayStr(){ return new Date().toISOString().split('T')[0]; }
-function getLogs(){ try{ return JSON.parse(localStorage.getItem('bbb_logs')||'{}'); }catch(e){ return {}; } }
-function saveLogs(l){ try{ localStorage.setItem('bbb_logs',JSON.stringify(l)); }catch(e){} }
+
+// Storage: try window.storage (Claude), fall back to localStorage (GitHub Pages)
+async function storageGet(key) {
+  try {
+    if (window.storage) {
+      var r = await window.storage.get(key);
+      return r ? JSON.parse(r.value) : null;
+    }
+  } catch(e) {}
+  try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e) { return null; }
+}
+
+async function storageSet(key, val) {
+  try {
+    if (window.storage) { await window.storage.set(key, JSON.stringify(val)); return; }
+  } catch(e) {}
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
+
+async function storageList(prefix) {
+  try {
+    if (window.storage) {
+      var r = await window.storage.list(prefix);
+      return r ? r.keys : [];
+    }
+  } catch(e) {}
+  try {
+    var keys = [];
+    for (var i=0; i<localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) keys.push(k);
+    }
+    return keys;
+  } catch(e) { return []; }
+}
+
+async function storageDelete(key) {
+  try { if (window.storage) { await window.storage.delete(key); return; } } catch(e) {}
+  try { localStorage.removeItem(key); } catch(e) {}
+}
 
 var DAYS = [
   { label:"MON", title:"🔥 Power Day", sub:"Heavy lifts · Rest 2-3 min", homesub:"Bands & bodyweight · Rest 2-3 min", exercises:[
@@ -86,98 +124,95 @@ var TIPS = [
   { emoji:"⏱", title:"12-Week Timeline", body:"Weeks 1-4: Learn movements. Weeks 5-8: Add weight. Weeks 9-12: Visible shape change. Commit to the full program." }
 ];
 
-// ── LOG ENTRY FORM ──────────────────────────────────────────
+// ── LOG FORM ──────────────────────────────────────────────────
 function LogForm(props) {
-  var exName = props.exName;
-  var s = useState(''); var sets = s[0]; var setSets = s[1];
-  var r = useState(''); var reps = r[0]; var setReps = r[1];
-  var w = useState(''); var weight = w[0]; var setWeight = w[1];
-  var n = useState(''); var note = n[0]; var setNote = n[1];
+  var s=useState(''),r=useState(''),w=useState(''),n=useState('');
+  var sets=s[0],setSets=s[1],reps=r[0],setReps=r[1],weight=w[0],setWeight=w[1],note=n[0],setNote=n[1];
+  var saving=useState(false);var setSaving=saving[1];saving=saving[0];
 
-  function submit() {
-    if (!sets && !reps && !weight) return;
-    var logs = getLogs();
-    var key = todayStr() + '_' + exName;
-    if (!logs[key]) logs[key] = [];
-    logs[key].push({ sets: sets, reps: reps, weight: weight, note: note, time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) });
-    saveLogs(logs);
-    setSets(''); setReps(''); setWeight(''); setNote('');
+  async function submit() {
+    if(!sets&&!reps&&!weight) return;
+    setSaving(true);
+    var key='bbb_'+todayStr()+'_'+props.exName.replace(/\s+/g,'-');
+    var existing=await storageGet(key)||[];
+    existing.push({sets:sets,reps:reps,weight:weight,note:note,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+    await storageSet(key,existing);
+    setSets('');setReps('');setWeight('');setNote('');
+    setSaving(false);
     props.onSaved();
   }
 
-  return React.createElement('div', { style:{background:'#0a0010',border:'1px solid #3b0764',borderRadius:10,padding:12,marginTop:8} },
-    React.createElement('div', { style:{fontSize:11,color:'#c084fc',fontWeight:700,marginBottom:8} }, '📝 Log This Exercise'),
-    React.createElement('div', { style:{display:'flex',gap:6,marginBottom:6} },
-      React.createElement('div', { style:{flex:1} },
-        React.createElement('div', { style:{fontSize:10,color:'#9ca3af',marginBottom:3} }, 'SETS'),
-        React.createElement('input', { type:'number', placeholder:'4', value:sets, onChange:function(e){setSets(e.target.value);} })
-      ),
-      React.createElement('div', { style:{flex:1} },
-        React.createElement('div', { style:{fontSize:10,color:'#9ca3af',marginBottom:3} }, 'REPS'),
-        React.createElement('input', { type:'number', placeholder:'12', value:reps, onChange:function(e){setReps(e.target.value);} })
-      ),
-      React.createElement('div', { style:{flex:1} },
-        React.createElement('div', { style:{fontSize:10,color:'#9ca3af',marginBottom:3} }, 'WEIGHT'),
-        React.createElement('input', { type:'text', placeholder:'95 lb', value:weight, onChange:function(e){setWeight(e.target.value);} })
-      )
+  return React.createElement('div',{style:{background:'#0a0010',border:'1px solid #3b0764',borderRadius:10,padding:12,marginTop:8}},
+    React.createElement('div',{style:{fontSize:11,color:'#c084fc',fontWeight:700,marginBottom:8}},'📝 Log This Exercise'),
+    React.createElement('div',{style:{display:'flex',gap:6,marginBottom:6}},
+      React.createElement('div',{style:{flex:1}},React.createElement('div',{style:{fontSize:10,color:'#9ca3af',marginBottom:3}},'SETS'),React.createElement('input',{type:'number',placeholder:'4',value:sets,onChange:function(e){setSets(e.target.value);}})),
+      React.createElement('div',{style:{flex:1}},React.createElement('div',{style:{fontSize:10,color:'#9ca3af',marginBottom:3}},'REPS'),React.createElement('input',{type:'number',placeholder:'12',value:reps,onChange:function(e){setReps(e.target.value);}})),
+      React.createElement('div',{style:{flex:1}},React.createElement('div',{style:{fontSize:10,color:'#9ca3af',marginBottom:3}},'WEIGHT'),React.createElement('input',{type:'text',placeholder:'95 lb',value:weight,onChange:function(e){setWeight(e.target.value);}}))
     ),
-    React.createElement('div', { style:{marginBottom:8} },
-      React.createElement('div', { style:{fontSize:10,color:'#9ca3af',marginBottom:3} }, 'NOTE (optional)'),
-      React.createElement('input', { type:'text', placeholder:'e.g. felt strong, form tip...', value:note, onChange:function(e){setNote(e.target.value);} })
+    React.createElement('div',{style:{marginBottom:8}},
+      React.createElement('div',{style:{fontSize:10,color:'#9ca3af',marginBottom:3}},'NOTE (optional)'),
+      React.createElement('input',{type:'text',placeholder:'e.g. felt strong...',value:note,onChange:function(e){setNote(e.target.value);}})
     ),
-    React.createElement('button', { className:'log-btn', onClick:submit, style:{width:'100%'} }, '💾 Save Set')
+    React.createElement('button',{className:'log-btn',onClick:submit,style:{width:'100%',opacity:saving?0.6:1}},saving?'Saving...':'💾 Save Set')
   );
 }
 
-// ── HISTORY VIEW ────────────────────────────────────────────
+// ── HISTORY VIEW ──────────────────────────────────────────────
 function HistoryView() {
-  var r = useState(0); var refresh = r[0]; var setRefresh = r[1];
-  var logs = getLogs();
+  var d=useState(null),setData=d[1];d=d[0];
+  var loading=useState(true),setLoading=loading[1];loading=loading[0];
+  var refresh=useState(0),setRefresh=refresh[1];refresh=refresh[0];
 
-  // Group by date → exercise
-  var byDate = {};
-  Object.keys(logs).forEach(function(key) {
-    var parts = key.split('_');
-    var date = parts[0];
-    var ex = parts.slice(1).join('_');
-    if (!byDate[date]) byDate[date] = {};
-    byDate[date][ex] = logs[key];
-  });
+  useEffect(function(){
+    var cancelled=false;
+    (async function(){
+      setLoading(true);
+      var keys=await storageList('bbb_');
+      var byDate={};
+      for(var i=0;i<keys.length;i++){
+        var k=keys[i];
+        var parts=k.replace('bbb_','').split('_');
+        var date=parts[0], ex=parts.slice(1).join(' ').replace(/-/g,' ');
+        var entries=await storageGet(k)||[];
+        if(!byDate[date])byDate[date]={};
+        byDate[date][ex]=entries;
+      }
+      if(!cancelled){setData(byDate);setLoading(false);}
+    })();
+    return function(){cancelled=true;};
+  },[refresh]);
 
-  var dates = Object.keys(byDate).sort(function(a,b){return b.localeCompare(a);});
-
-  function delEntry(key, idx) {
-    var l = getLogs();
-    if (l[key]) { l[key].splice(idx,1); if(!l[key].length) delete l[key]; }
-    saveLogs(l);
+  async function delEntry(key,idx){
+    var entries=await storageGet(key)||[];
+    entries.splice(idx,1);
+    if(entries.length){await storageSet(key,entries);}
+    else{await storageDelete(key);}
     setRefresh(function(x){return x+1;});
   }
 
-  if (!dates.length) return React.createElement('div', { style:{textAlign:'center',color:'#6b7280',fontSize:13,padding:'30px 0'} }, 'No logs yet. Start logging your exercises to see history here!');
+  if(loading) return React.createElement('div',{style:{textAlign:'center',color:'#9ca3af',fontSize:13,padding:'20px 0'}},'Loading history...');
+  if(!d||!Object.keys(d).length) return React.createElement('div',{style:{textAlign:'center',color:'#6b7280',fontSize:13,padding:'30px 0'}},'No logs yet. Start logging your exercises to see history here!');
 
-  return React.createElement('div', null,
-    dates.map(function(date) {
-      var exs = byDate[date];
-      var friendly = new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-      return React.createElement('div', { key:date, style:{background:'#1a0030',border:'1px solid #3b0764',borderRadius:12,marginBottom:12,overflow:'hidden'} },
-        React.createElement('div', { style:{padding:'10px 14px',background:'#2a0050',fontSize:13,fontWeight:800,color:'#c084fc'} }, '📅 '+friendly),
-        React.createElement('div', { style:{padding:'10px 14px'} },
-          Object.keys(exs).map(function(ex) {
-            var entries = exs[ex];
-            var logKey = date+'_'+ex;
-            return React.createElement('div', { key:ex, className:'hist-block' },
-              React.createElement('div', { className:'hist-date' }, ex.replace(/_/g,' ')),
-              entries.map(function(entry, idx) {
-                return React.createElement('div', { key:idx, className:'hist-row' },
-                  React.createElement('span', null,
-                    entry.sets ? entry.sets+' sets' : '',
-                    entry.reps ? ' × '+entry.reps+' reps' : '',
-                    entry.weight ? ' @ '+entry.weight : ''
-                  ),
-                  React.createElement('span', { style:{display:'flex',alignItems:'center',gap:6} },
-                    entry.note ? React.createElement('span',{style:{color:'#9ca3af',fontStyle:'italic'}},entry.note) : null,
+  var dates=Object.keys(d).sort(function(a,b){return b.localeCompare(a);});
+  return React.createElement('div',null,
+    dates.map(function(date){
+      var exs=d[date];
+      var friendly=new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      return React.createElement('div',{key:date,style:{background:'#1a0030',border:'1px solid #3b0764',borderRadius:12,marginBottom:12,overflow:'hidden'}},
+        React.createElement('div',{style:{padding:'10px 14px',background:'#2a0050',fontSize:13,fontWeight:800,color:'#c084fc'}},'📅 '+friendly),
+        React.createElement('div',{style:{padding:'10px 14px'}},
+          Object.keys(exs).map(function(ex){
+            var entries=exs[ex];
+            var logKey='bbb_'+date+'_'+ex.replace(/\s+/g,'-');
+            return React.createElement('div',{key:ex,className:'hist-block'},
+              React.createElement('div',{className:'hist-date'},ex),
+              entries.map(function(entry,idx){
+                return React.createElement('div',{key:idx,className:'hist-row'},
+                  React.createElement('span',null,(entry.sets?entry.sets+' sets':''),(entry.reps?' × '+entry.reps+' reps':''),(entry.weight?' @ '+entry.weight:'')),
+                  React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+                    entry.note?React.createElement('span',{style:{color:'#9ca3af',fontStyle:'italic'}},entry.note):null,
                     React.createElement('span',{style:{color:'#6b7280'}},entry.time||''),
-                    React.createElement('button',{className:'del',onClick:function(){delEntry(logKey,idx);}}, '×')
+                    React.createElement('button',{className:'del',onClick:function(){delEntry(logKey,idx);}},'×')
                   )
                 );
               })
@@ -189,115 +224,97 @@ function HistoryView() {
   );
 }
 
-// ── EXERCISE CARD ────────────────────────────────────────────
+// ── EXERCISE CARD ─────────────────────────────────────────────
 function Card(props) {
-  var ex = props.ex, phase = props.phase, isDone = props.isDone, isOpen = props.isOpen, isHome = props.isHome, showLog = props.showLog;
-  var sv = useState(0); var saved = sv[0]; var setSaved = sv[1];
-
-  return React.createElement("div", { style:{background:isDone?"#0f1f0f":"#1a0030",border:"2px solid "+(isDone?"#166534":"#3b0764"),borderRadius:12,padding:"14px 16px",marginBottom:12} },
-    React.createElement("div", { onClick:props.onCheck, style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6,cursor:"pointer"} },
-      React.createElement("div", { style:{display:"flex",alignItems:"center",gap:8} },
-        React.createElement("span", { style:{fontSize:20} }, ex.emoji),
-        React.createElement("div", null,
-          React.createElement("div", { style:{fontWeight:700,fontSize:14,color:isDone?"#4ade80":"white"} }, (isDone?"✅ ":"")+ex.name),
-          React.createElement("div", { style:{fontSize:11,color:isHome?"#4ade80":"#7c3aed",fontWeight:600,marginTop:2} }, ex.area)
+  var ex=props.ex,phase=props.phase,isDone=props.isDone,isOpen=props.isOpen,isHome=props.isHome,showLog=props.showLog;
+  return React.createElement('div',{style:{background:isDone?'#0f1f0f':'#1a0030',border:'2px solid '+(isDone?'#166534':'#3b0764'),borderRadius:12,padding:'14px 16px',marginBottom:12}},
+    React.createElement('div',{onClick:props.onCheck,style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6,cursor:'pointer'}},
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
+        React.createElement('span',{style:{fontSize:20}},ex.emoji),
+        React.createElement('div',null,
+          React.createElement('div',{style:{fontWeight:700,fontSize:14,color:isDone?'#4ade80':'white'}},(isDone?'✅ ':'')+ex.name),
+          React.createElement('div',{style:{fontSize:11,color:isHome?'#4ade80':'#7c3aed',fontWeight:600,marginTop:2}},ex.area)
         )
       ),
-      React.createElement("div", { style:{fontSize:11,color:"#6b7280",textAlign:"right"} },
-        isHome ? ex.homesets : ex.sets,
-        ex.weights && !isHome ? React.createElement("span", null, React.createElement("br"), React.createElement("span", {style:{color:"#c084fc",fontWeight:700}}, ex.weights[phase])) : null
+      React.createElement('div',{style:{fontSize:11,color:'#6b7280',textAlign:'right'}},
+        isHome?ex.homesets:ex.sets,
+        ex.weights&&!isHome?React.createElement('span',null,React.createElement('br'),React.createElement('span',{style:{color:'#c084fc',fontWeight:700}},ex.weights[phase])):null
       )
     ),
-    React.createElement("div", { style:{fontSize:12,color:"#9ca3af",lineHeight:1.5,marginBottom:8} }, isHome ? ex.home : ex.notes),
-    React.createElement("div", { style:{background:"#0a0010",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#c084fc",fontStyle:"italic",marginBottom:10} }, "💡 "+ex.tip),
-    React.createElement("div", { style:{display:"flex",gap:8,marginBottom:8} },
-      React.createElement("button", { onClick:props.onExpand, style:{flex:1,background:isOpen?"#3b0764":"#0a0010",border:"1px solid #3b0764",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#a78bfa",fontWeight:700,cursor:"pointer"} }, isOpen?"▲ Hide How To":"▼ How To"),
-      React.createElement("button", { onClick:props.onToggleLog, style:{flex:1,background:showLog?"#7c3aed":"#0a0010",border:"1px solid #7c3aed",borderRadius:8,padding:"6px 14px",fontSize:12,color:showLog?"white":"#c084fc",fontWeight:700,cursor:"pointer"} }, showLog?"▲ Hide Log":"📝 Log")
+    React.createElement('div',{style:{fontSize:12,color:'#9ca3af',lineHeight:1.5,marginBottom:8}},isHome?ex.home:ex.notes),
+    React.createElement('div',{style:{background:'#0a0010',borderRadius:8,padding:'6px 10px',fontSize:11,color:'#c084fc',fontStyle:'italic',marginBottom:10}},'💡 '+ex.tip),
+    React.createElement('div',{style:{display:'flex',gap:8,marginBottom:8}},
+      React.createElement('button',{onClick:props.onExpand,style:{flex:1,background:isOpen?'#3b0764':'#0a0010',border:'1px solid #3b0764',borderRadius:8,padding:'6px 14px',fontSize:12,color:'#a78bfa',fontWeight:700,cursor:'pointer'}},isOpen?'▲ Hide How To':'▼ How To'),
+      React.createElement('button',{onClick:props.onToggleLog,style:{flex:1,background:showLog?'#7c3aed':'#0a0010',border:'1px solid #7c3aed',borderRadius:8,padding:'6px 14px',fontSize:12,color:showLog?'white':'#c084fc',fontWeight:700,cursor:'pointer'}},showLog?'▲ Hide Log':'📝 Log')
     ),
-    isOpen && React.createElement("div", { style:{marginTop:0,background:"#0a0010",borderRadius:8,padding:"12px 14px",marginBottom:8} },
-      ex.howto.map(function(step,s){ return React.createElement("div",{key:s,style:{display:"flex",gap:10,marginBottom:8}}, React.createElement("span",{style:{color:"#7c3aed",fontWeight:800,fontSize:13,minWidth:20}},(s+1)+"."), React.createElement("span",{style:{color:"#e2e8f0",fontSize:12,lineHeight:1.5}},step)); })
+    isOpen&&React.createElement('div',{style:{marginTop:0,background:'#0a0010',borderRadius:8,padding:'12px 14px',marginBottom:8}},
+      ex.howto.map(function(step,s){return React.createElement('div',{key:s,style:{display:'flex',gap:10,marginBottom:8}},React.createElement('span',{style:{color:'#7c3aed',fontWeight:800,fontSize:13,minWidth:20}},(s+1)+'.'),React.createElement('span',{style:{color:'#e2e8f0',fontSize:12,lineHeight:1.5}},step));})
     ),
-    showLog && React.createElement(LogForm, { exName:ex.name, onSaved:function(){setSaved(function(x){return x+1;});props.onLogSaved&&props.onLogSaved();} })
+    showLog&&React.createElement(LogForm,{exName:ex.name,onSaved:function(){props.onLogSaved&&props.onLogSaved();}})
   );
 }
 
-// ── MAIN APP ─────────────────────────────────────────────────
+// ── MAIN APP ──────────────────────────────────────────────────
 function App() {
-  var t = useState(getInitialTab); var tab = t[0]; var setTab = t[1];
-  var m = useState("gym"); var mode = m[0]; var setMode = m[1];
-  var p = useState(0); var phase = p[0]; var setPhase = p[1];
-  var c = useState({}); var checked = c[0]; var setChecked = c[1];
-  var e = useState({}); var expanded = e[0]; var setExpanded = e[1];
-  var lg = useState({}); var logOpen = lg[0]; var setLogOpen = lg[1];
-  var mainTabState = useState('workout'); var mainTab = mainTabState[0]; var setMainTab = mainTabState[1];
-  var histRefresh = useState(0); var setHistRefresh = histRefresh[1];
+  var t=useState(getInitialTab),tab=t[0],setTab=t[1];
+  var m=useState('gym'),mode=m[0],setMode=m[1];
+  var p=useState(0),phase=p[0],setPhase=p[1];
+  var c=useState({}),checked=c[0],setChecked=c[1];
+  var e=useState({}),expanded=e[0],setExpanded=e[1];
+  var lg=useState({}),logOpen=lg[0],setLogOpen=lg[1];
+  var mt=useState('workout'),mainTab=mt[0],setMainTab=mt[1];
+  var hr=useState(0),histRefresh=hr[0],setHistRefresh=hr[1];
 
-  var isLog = mainTab === 'log';
-  var isTips = !isLog && tab === DAYS.length;
-  var isHome = mode === "home";
-  var day = (!isTips && !isLog) ? DAYS[tab] : null;
-  var exs = day ? day.exercises : [];
-  var done = exs.filter(function(_,i){ return !!checked[mode+"-"+tab+"-"+phase+"-"+i]; }).length;
-  var pct = exs.length > 0 ? (done/exs.length)*100 : 0;
+  var isLog=mainTab==='log';
+  var isTips=!isLog&&tab===DAYS.length;
+  var isHome=mode==='home';
+  var day=(!isTips&&!isLog)?DAYS[tab]:null;
+  var exs=day?day.exercises:[];
+  var done=exs.filter(function(_,i){return !!checked[mode+'-'+tab+'-'+phase+'-'+i];}).length;
+  var pct=exs.length>0?(done/exs.length)*100:0;
 
-  function ck(key){ setChecked(function(prev){ var n=Object.assign({},prev); n[key]=!prev[key]; return n; }); }
-  function ek(key){ setExpanded(function(prev){ var n=Object.assign({},prev); n[key]=!prev[key]; return n; }); }
-  function lk(key){ setLogOpen(function(prev){ var n=Object.assign({},prev); n[key]=!prev[key]; return n; }); }
+  function ck(key){setChecked(function(prev){var n=Object.assign({},prev);n[key]=!prev[key];return n;});}
+  function ek(key){setExpanded(function(prev){var n=Object.assign({},prev);n[key]=!prev[key];return n;});}
+  function lk(key){setLogOpen(function(prev){var n=Object.assign({},prev);n[key]=!prev[key];return n;});}
 
-  var restNotice = getRestDayNotice();
+  var restNotice=getRestDayNotice();
 
-  return React.createElement("div", { style:{fontFamily:"system-ui,sans-serif",maxWidth:460,margin:"0 auto",padding:16,backgroundColor:"#0a0010",minHeight:"100vh"} },
-
-    // HEADER
-    React.createElement("div", { style:{background:isHome?"linear-gradient(135deg,#064e3b,#059669)":"linear-gradient(135deg,#7c1a4a,#c44dff)",borderRadius:14,padding:"18px 20px",color:"white",marginBottom:16} },
-      React.createElement("div", { style:{fontSize:22,fontWeight:800} }, "🍑 Bubble Butt Builder"),
-      React.createElement("div", { style:{fontSize:13,opacity:0.9,marginTop:2} }, isHome ? "🏠 At Home Edition · Bands & Bodyweight" : "Mon · Wed · Fri · 12-Week Glute Growth Program"),
-      !isTips && !isLog && React.createElement("div", null,
-        React.createElement("div", { style:{marginTop:10,background:"rgba(255,255,255,0.25)",borderRadius:8,height:8} },
-          React.createElement("div", { style:{background:"white",borderRadius:8,height:8,width:pct+"%",transition:"width 0.3s"} })
+  return React.createElement('div',{style:{fontFamily:'system-ui,sans-serif',maxWidth:460,margin:'0 auto',padding:16,backgroundColor:'#0a0010',minHeight:'100vh'}},
+    React.createElement('div',{style:{background:isHome?'linear-gradient(135deg,#064e3b,#059669)':'linear-gradient(135deg,#7c1a4a,#c44dff)',borderRadius:14,padding:'18px 20px',color:'white',marginBottom:16}},
+      React.createElement('div',{style:{fontSize:22,fontWeight:800}},'🍑 Bubble Butt Builder'),
+      React.createElement('div',{style:{fontSize:13,opacity:0.9,marginTop:2}},isHome?'🏠 At Home Edition · Bands & Bodyweight':'Mon · Wed · Fri · 12-Week Glute Growth Program'),
+      !isTips&&!isLog&&React.createElement('div',null,
+        React.createElement('div',{style:{marginTop:10,background:'rgba(255,255,255,0.25)',borderRadius:8,height:8}},
+          React.createElement('div',{style:{background:'white',borderRadius:8,height:8,width:pct+'%',transition:'width 0.3s'}})
         ),
-        React.createElement("div", { style:{fontSize:12,opacity:0.85,marginTop:4} }, done+" of "+exs.length+" complete"+(done===exs.length&&exs.length>0?" 🔥 DONE!":""))
+        React.createElement('div',{style:{fontSize:12,opacity:0.85,marginTop:4}},done+' of '+exs.length+' complete'+(done===exs.length&&exs.length>0?' 🔥 DONE!':''))
       )
     ),
-
-    // MAIN TABS
-    React.createElement("div", { style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:12,gap:4} },
-      React.createElement("button", { onClick:function(){setMainTab('workout');}, style:{flex:1,padding:"9px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:mainTab==='workout'?"#7c3aed":"transparent",color:mainTab==='workout'?"white":"#9ca3af"} }, "🏋️ Workout"),
-      React.createElement("button", { onClick:function(){setMainTab('log');setHistRefresh(function(x){return x+1;});}, style:{flex:1,padding:"9px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:mainTab==='log'?"#7c3aed":"transparent",color:mainTab==='log'?"white":"#9ca3af"} }, "📅 Log History")
+    React.createElement('div',{style:{display:'flex',background:'#1a0030',borderRadius:10,padding:4,marginBottom:12,gap:4}},
+      React.createElement('button',{onClick:function(){setMainTab('workout');},style:{flex:1,padding:'9px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:12,fontWeight:700,background:mainTab==='workout'?'#7c3aed':'transparent',color:mainTab==='workout'?'white':'#9ca3af'}},'🏋️ Workout'),
+      React.createElement('button',{onClick:function(){setMainTab('log');setHistRefresh(function(x){return x+1;});},style:{flex:1,padding:'9px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:12,fontWeight:700,background:mainTab==='log'?'#7c3aed':'transparent',color:mainTab==='log'?'white':'#9ca3af'}},'📅 Log History')
     ),
-
-    // LOG HISTORY
-    isLog && React.createElement(HistoryView, { key: histRefresh[0] }),
-
-    // WORKOUT VIEW
-    !isLog && React.createElement("div", null,
-      restNotice && React.createElement("div", { style:{background:"#1a0030",border:"1px solid #7c3aed",borderRadius:10,padding:"10px 14px",fontSize:12,color:"#c084fc",fontWeight:600,marginBottom:12,textAlign:"center"} }, "😴 " + restNotice),
-
-      React.createElement("div", { style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:12,gap:4} },
-        React.createElement("button", { onClick:function(){setMode("gym");setChecked({});}, style:{flex:1,padding:"8px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:!isHome?"#7c3aed":"transparent",color:!isHome?"white":"#9ca3af"} }, "🏋️ Gym"),
-        React.createElement("button", { onClick:function(){setMode("home");setChecked({});}, style:{flex:1,padding:"8px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:isHome?"#059669":"transparent",color:isHome?"white":"#9ca3af"} }, "🏠 At Home")
+    isLog&&React.createElement(HistoryView,{key:histRefresh}),
+    !isLog&&React.createElement('div',null,
+      restNotice&&React.createElement('div',{style:{background:'#1a0030',border:'1px solid #7c3aed',borderRadius:10,padding:'10px 14px',fontSize:12,color:'#c084fc',fontWeight:600,marginBottom:12,textAlign:'center'}},'😴 '+restNotice),
+      React.createElement('div',{style:{display:'flex',background:'#1a0030',borderRadius:10,padding:4,marginBottom:12,gap:4}},
+        React.createElement('button',{onClick:function(){setMode('gym');setChecked({});},style:{flex:1,padding:'8px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,background:!isHome?'#7c3aed':'transparent',color:!isHome?'white':'#9ca3af'}},'🏋️ Gym'),
+        React.createElement('button',{onClick:function(){setMode('home');setChecked({});},style:{flex:1,padding:'8px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,background:isHome?'#059669':'transparent',color:isHome?'white':'#9ca3af'}},'🏠 At Home')
       ),
-
-      React.createElement("div", { style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:12,gap:2} },
-        DAYS.map(function(d,i){ return React.createElement("button",{key:i,onClick:function(){setTab(i);},style:{flex:1,padding:"8px 2px",borderRadius:8,border:"none",cursor:"pointer",fontSize:10,fontWeight:700,background:tab===i&&!isTips?"#7c3aed":"transparent",color:tab===i&&!isTips?"white":"#9ca3af"}},d.label); }),
-        React.createElement("button", { onClick:function(){setTab(DAYS.length);}, style:{flex:1,padding:"8px 2px",borderRadius:8,border:"none",cursor:"pointer",fontSize:10,fontWeight:700,background:isTips?"#7c3aed":"transparent",color:isTips?"white":"#9ca3af"} }, "TIPS")
+      React.createElement('div',{style:{display:'flex',background:'#1a0030',borderRadius:10,padding:4,marginBottom:12,gap:2}},
+        DAYS.map(function(d,i){return React.createElement('button',{key:i,onClick:function(){setTab(i);},style:{flex:1,padding:'8px 2px',borderRadius:8,border:'none',cursor:'pointer',fontSize:10,fontWeight:700,background:tab===i&&!isTips?'#7c3aed':'transparent',color:tab===i&&!isTips?'white':'#9ca3af'}},d.label);}),
+        React.createElement('button',{onClick:function(){setTab(DAYS.length);},style:{flex:1,padding:'8px 2px',borderRadius:8,border:'none',cursor:'pointer',fontSize:10,fontWeight:700,background:isTips?'#7c3aed':'transparent',color:isTips?'white':'#9ca3af'}},'TIPS')
       ),
-
-      React.createElement("div", { style:{marginBottom:14} },
-        React.createElement("div", { style:{fontSize:11,fontWeight:700,color:"#6b7280",marginBottom:6,letterSpacing:1} }, "PHASE"),
-        React.createElement("div", { style:{display:"flex",gap:8} },
-          ["Weeks 1-4","Weeks 5-8","Weeks 9-12"].map(function(l,i){ return React.createElement("button",{key:i,onClick:function(){setPhase(i);setChecked({});},style:{flex:1,padding:"8px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:phase===i?"#7c3aed":"#1a0030",color:phase===i?"white":"#9ca3af"}},l); })
+      React.createElement('div',{style:{marginBottom:14}},
+        React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'#6b7280',marginBottom:6,letterSpacing:1}},'PHASE'),
+        React.createElement('div',{style:{display:'flex',gap:8}},
+          ['Weeks 1-4','Weeks 5-8','Weeks 9-12'].map(function(l,i){return React.createElement('button',{key:i,onClick:function(){setPhase(i);setChecked({});},style:{flex:1,padding:'8px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,background:phase===i?'#7c3aed':'#1a0030',color:phase===i?'white':'#9ca3af'}},l);})
         )
       ),
-
-      !isTips && day && React.createElement("div", null,
-        React.createElement("div", { style:{background:"#1a0030",borderRadius:8,padding:"10px 14px",fontSize:12,color:isHome?"#4ade80":"#a78bfa",marginBottom:14,fontWeight:600} },
-          day.title+" · "+(isHome ? day.homesub : day.sub)
-        ),
+      !isTips&&day&&React.createElement('div',null,
+        React.createElement('div',{style:{background:'#1a0030',borderRadius:8,padding:'10px 14px',fontSize:12,color:isHome?'#4ade80':'#a78bfa',marginBottom:14,fontWeight:600}},day.title+' · '+(isHome?day.homesub:day.sub)),
         exs.map(function(ex,i){
-          var ckey=mode+"-"+tab+"-"+phase+"-"+i;
-          var ekey=mode+"-"+tab+"-e-"+i;
-          var lkey=mode+"-"+tab+"-l-"+i;
+          var ckey=mode+'-'+tab+'-'+phase+'-'+i,ekey=mode+'-'+tab+'-e-'+i,lkey=mode+'-'+tab+'-l-'+i;
           return React.createElement(Card,{key:i,ex:ex,phase:phase,isDone:!!checked[ckey],isOpen:!!expanded[ekey],showLog:!!logOpen[lkey],isHome:isHome,
             onCheck:function(){ck(ckey);},
             onExpand:function(ev){if(ev&&ev.stopPropagation)ev.stopPropagation();ek(ekey);},
@@ -306,17 +323,16 @@ function App() {
           });
         })
       ),
-
-      isTips && React.createElement("div", null,
-        React.createElement("div", { style:{fontSize:13,fontWeight:700,color:"#c084fc",marginBottom:12} }, "Your Glute Growth Guide"),
-        TIPS.map(function(tip,i){ return React.createElement("div",{key:i,style:{background:"#1a0030",border:"1px solid #3b0764",borderRadius:12,padding:"12px 14px",marginBottom:10}}, React.createElement("div",{style:{display:"flex",gap:10,alignItems:"flex-start"}}, React.createElement("span",{style:{fontSize:20}},tip.emoji), React.createElement("div",null, React.createElement("div",{style:{fontWeight:700,fontSize:13,color:"white",marginBottom:4}},tip.title), React.createElement("div",{style:{fontSize:12,color:"#9ca3af",lineHeight:1.5}},tip.body)))); }),
-        React.createElement("div", { style:{marginTop:16,background:"#1a0030",borderRadius:10,padding:"14px 16px",fontSize:12,color:"#c084fc",fontWeight:600,textAlign:"center",border:"1px solid #3b0764"} }, "🍑 Consistency over intensity. Show up Mon · Wed · Fri and your body will transform.")
+      isTips&&React.createElement('div',null,
+        React.createElement('div',{style:{fontSize:13,fontWeight:700,color:'#c084fc',marginBottom:12}},'Your Glute Growth Guide'),
+        TIPS.map(function(tip,i){return React.createElement('div',{key:i,style:{background:'#1a0030',border:'1px solid #3b0764',borderRadius:12,padding:'12px 14px',marginBottom:10}},React.createElement('div',{style:{display:'flex',gap:10,alignItems:'flex-start'}},React.createElement('span',{style:{fontSize:20}},tip.emoji),React.createElement('div',null,React.createElement('div',{style:{fontWeight:700,fontSize:13,color:'white',marginBottom:4}},tip.title),React.createElement('div',{style:{fontSize:12,color:'#9ca3af',lineHeight:1.5}},tip.body))));}),
+        React.createElement('div',{style:{marginTop:16,background:'#1a0030',borderRadius:10,padding:'14px 16px',fontSize:12,color:'#c084fc',fontWeight:600,textAlign:'center',border:'1px solid #3b0764'}},'🍑 Consistency over intensity. Show up Mon · Wed · Fri and your body will transform.')
       )
     )
   );
 }
 
-ReactDOM.render(React.createElement(App, null), document.getElementById("root"));
+ReactDOM.render(React.createElement(App,null),document.getElementById('root'));
 </script>
 </body>
 </html>
