@@ -15,10 +15,21 @@ var useState = React.useState;
 
 function getInitialTab() {
   var d = new Date().getDay();
-  if (d === 1) return 0;
-  if (d === 3) return 1;
-  if (d === 5) return 2;
+  if (d === 1) return 0; // MON
+  if (d === 3) return 1; // WED
+  if (d === 5) return 2; // FRI
+  if (d === 2 || d === 6) return 1; // point to WED
+  if (d === 4 || d === 0) return 2; // point to FRI
   return 0;
+}
+
+function getRestDayNotice() {
+  var d = new Date().getDay();
+  if (d === 2) return "Today is Tuesday — next glute day is Wednesday!";
+  if (d === 4) return "Today is Thursday — next glute day is Friday!";
+  if (d === 6) return "Today is Saturday — rest day! Next glute day is Monday.";
+  if (d === 0) return "Today is Sunday — rest day! Next glute day is Monday.";
+  return null;
 }
 
 var DAYS = [
@@ -102,6 +113,8 @@ function App() {
   function ck(key){ setChecked(function(prev){ var n=Object.assign({},prev); n[key]=!prev[key]; return n; }); }
   function ek(key){ setExpanded(function(prev){ var n=Object.assign({},prev); n[key]=!prev[key]; return n; }); }
 
+  var restNotice = getRestDayNotice();
+
   return React.createElement("div", { style:{fontFamily:"system-ui,sans-serif",maxWidth:460,margin:"0 auto",padding:16,backgroundColor:"#0a0010",minHeight:"100vh"} },
     React.createElement("div", { style:{background:isHome?"linear-gradient(135deg,#064e3b,#059669)":"linear-gradient(135deg,#7c1a4a,#c44dff)",borderRadius:14,padding:"18px 20px",color:"white",marginBottom:16} },
       React.createElement("div", { style:{fontSize:22,fontWeight:800} }, "🍑 Bubble Butt Builder"),
@@ -113,6 +126,7 @@ function App() {
         React.createElement("div", { style:{fontSize:12,opacity:0.85,marginTop:4} }, done+" of "+exs.length+" complete"+(done===exs.length&&exs.length>0?" 🔥 DONE!":""))
       )
     ),
+    restNotice && React.createElement("div", { style:{background:"#1a0030",border:"1px solid #7c3aed",borderRadius:10,padding:"10px 14px",fontSize:12,color:"#c084fc",fontWeight:600,marginBottom:12,textAlign:"center"} }, "😴 " + restNotice),
     React.createElement("div", { style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:12,gap:4} },
       React.createElement("button", { onClick:function(){setMode("gym");setChecked({});}, style:{flex:1,padding:"8px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:!isHome?"#7c3aed":"transparent",color:!isHome?"white":"#9ca3af"} }, "🏋️ Gym"),
       React.createElement("button", { onClick:function(){setMode("home");setChecked({});}, style:{flex:1,padding:"8px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:11,fontWeight:700,background:isHome?"#059669":"transparent",color:isHome?"white":"#9ca3af"} }, "🏠 At Home")
