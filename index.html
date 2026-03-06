@@ -24,8 +24,22 @@
 var useState = React.useState;
 var useEffect = React.useEffect;
 
+// ── LOCAL DAY (not UTC) ───────────────────────────────────────
+function localDay() {
+  var now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getDay();
+}
+
+function todayStr() {
+  var now = new Date();
+  var y = now.getFullYear();
+  var mo = now.getMonth() + 1;
+  var d = now.getDate();
+  return y + '-' + (mo < 10 ? '0' + mo : mo) + '-' + (d < 10 ? '0' + d : d);
+}
+
 function getInitialTab() {
-  var d = new Date().getDay();
+  var d = localDay();
   if (d===1) return 0;
   if (d===3) return 1;
   if (d===5) return 2;
@@ -35,7 +49,7 @@ function getInitialTab() {
 }
 
 function getRestDayNotice() {
-  var d = new Date().getDay();
+  var d = localDay();
   if (d===2) return "Today is Tuesday — next glute day is Wednesday!";
   if (d===4) return "Today is Thursday — next glute day is Friday!";
   if (d===6) return "Today is Saturday — rest day! Next glute day is Monday.";
@@ -43,43 +57,19 @@ function getRestDayNotice() {
   return null;
 }
 
-function todayStr(){ return new Date().toISOString().split('T')[0]; }
-
-// Storage: try window.storage (Claude), fall back to localStorage (GitHub Pages)
+// ── STORAGE ───────────────────────────────────────────────────
 async function storageGet(key) {
-  try {
-    if (window.storage) {
-      var r = await window.storage.get(key);
-      return r ? JSON.parse(r.value) : null;
-    }
-  } catch(e) {}
-  try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e) { return null; }
+  try { if (window.storage) { var r=await window.storage.get(key); return r?JSON.parse(r.value):null; } } catch(e) {}
+  try { var v=localStorage.getItem(key); return v?JSON.parse(v):null; } catch(e) { return null; }
 }
-
-async function storageSet(key, val) {
-  try {
-    if (window.storage) { await window.storage.set(key, JSON.stringify(val)); return; }
-  } catch(e) {}
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+async function storageSet(key,val) {
+  try { if (window.storage) { await window.storage.set(key,JSON.stringify(val)); return; } } catch(e) {}
+  try { localStorage.setItem(key,JSON.stringify(val)); } catch(e) {}
 }
-
 async function storageList(prefix) {
-  try {
-    if (window.storage) {
-      var r = await window.storage.list(prefix);
-      return r ? r.keys : [];
-    }
-  } catch(e) {}
-  try {
-    var keys = [];
-    for (var i=0; i<localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.startsWith(prefix)) keys.push(k);
-    }
-    return keys;
-  } catch(e) { return []; }
+  try { if (window.storage) { var r=await window.storage.list(prefix); return r?r.keys:[]; } } catch(e) {}
+  try { var keys=[]; for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith(prefix))keys.push(k);} return keys; } catch(e) { return []; }
 }
-
 async function storageDelete(key) {
   try { if (window.storage) { await window.storage.delete(key); return; } } catch(e) {}
   try { localStorage.removeItem(key); } catch(e) {}
@@ -128,7 +118,7 @@ var TIPS = [
 function LogForm(props) {
   var s=useState(''),r=useState(''),w=useState(''),n=useState('');
   var sets=s[0],setSets=s[1],reps=r[0],setReps=r[1],weight=w[0],setWeight=w[1],note=n[0],setNote=n[1];
-  var saving=useState(false);var setSaving=saving[1];saving=saving[0];
+  var sv=useState(false),setSaving=sv[1];sv=sv[0];
 
   async function submit() {
     if(!sets&&!reps&&!weight) return;
@@ -153,7 +143,7 @@ function LogForm(props) {
       React.createElement('div',{style:{fontSize:10,color:'#9ca3af',marginBottom:3}},'NOTE (optional)'),
       React.createElement('input',{type:'text',placeholder:'e.g. felt strong...',value:note,onChange:function(e){setNote(e.target.value);}})
     ),
-    React.createElement('button',{className:'log-btn',onClick:submit,style:{width:'100%',opacity:saving?0.6:1}},saving?'Saving...':'💾 Save Set')
+    React.createElement('button',{className:'log-btn',onClick:submit,style:{width:'100%',opacity:sv?0.6:1}},sv?'Saving...':'💾 Save Set')
   );
 }
 
@@ -172,7 +162,7 @@ function HistoryView() {
       for(var i=0;i<keys.length;i++){
         var k=keys[i];
         var parts=k.replace('bbb_','').split('_');
-        var date=parts[0], ex=parts.slice(1).join(' ').replace(/-/g,' ');
+        var date=parts[0],ex=parts.slice(1).join(' ').replace(/-/g,' ');
         var entries=await storageGet(k)||[];
         if(!byDate[date])byDate[date]={};
         byDate[date][ex]=entries;
@@ -207,12 +197,14 @@ function HistoryView() {
             return React.createElement('div',{key:ex,className:'hist-block'},
               React.createElement('div',{className:'hist-date'},ex),
               entries.map(function(entry,idx){
+                var capturedIdx=idx;
+                var capturedKey=logKey;
                 return React.createElement('div',{key:idx,className:'hist-row'},
                   React.createElement('span',null,(entry.sets?entry.sets+' sets':''),(entry.reps?' × '+entry.reps+' reps':''),(entry.weight?' @ '+entry.weight:'')),
                   React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
                     entry.note?React.createElement('span',{style:{color:'#9ca3af',fontStyle:'italic'}},entry.note):null,
                     React.createElement('span',{style:{color:'#6b7280'}},entry.time||''),
-                    React.createElement('button',{className:'del',onClick:function(){delEntry(logKey,idx);}},'×')
+                    React.createElement('button',{className:'del',onClick:function(){delEntry(capturedKey,capturedIdx);}},'×')
                   )
                 );
               })
