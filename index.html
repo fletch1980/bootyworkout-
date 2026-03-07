@@ -24,12 +24,10 @@
 var useState = React.useState;
 var useEffect = React.useEffect;
 
-// ── LOCAL DAY (not UTC) ───────────────────────────────────────
 function localDay() {
   var now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getDay();
 }
-
 function todayStr() {
   var now = new Date();
   var y = now.getFullYear();
@@ -37,7 +35,6 @@ function todayStr() {
   var d = now.getDate();
   return y + '-' + (mo < 10 ? '0' + mo : mo) + '-' + (d < 10 ? '0' + d : d);
 }
-
 function getInitialTab() {
   var d = localDay();
   if (d===1) return 0;
@@ -47,7 +44,6 @@ function getInitialTab() {
   if (d===4||d===0) return 2;
   return 0;
 }
-
 function getRestDayNotice() {
   var d = localDay();
   if (d===2) return "Today is Tuesday — next glute day is Wednesday!";
@@ -57,7 +53,6 @@ function getRestDayNotice() {
   return null;
 }
 
-// ── STORAGE ───────────────────────────────────────────────────
 async function storageGet(key) {
   try { if (window.storage) { var r=await window.storage.get(key); return r?JSON.parse(r.value):null; } } catch(e) {}
   try { var v=localStorage.getItem(key); return v?JSON.parse(v):null; } catch(e) { return null; }
@@ -80,7 +75,7 @@ var DAYS = [
     { name:"Barbell Hip Thrust", area:"Glutes", emoji:"🏋️", sets:"4 × 10-12", weights:["45 lb bar","65-75 lb","85-95 lb"], notes:"Upper back on bench, bar on hips. Drive through heels, squeeze hard at top.", tip:"Hold 1 full second at the top — that squeeze is where growth happens", home:"Banded glute bridge — heavy band above knees, drive up and squeeze hard. Add dumbbell on hips if you have one.", homesets:"4 × 10-12", howto:["Upper back rests on bench, padded bar across hips","Feet flat, hip-width, knees bent 90°","Drive through heels and thrust hips up","Squeeze glutes HARD at top — hold 1 second","Lower slowly — 3 counts down","Keep chin tucked, do not hyperextend lower back"] },
     { name:"Romanian Deadlift", area:"Hamstrings & Glutes", emoji:"🏋️", sets:"3 × 10-12", weights:["20-25 lb dumbbells","30-35 lb","40-50 lb"], notes:"Hinge at hips, push butt back. Feel the hamstring stretch at the bottom.", tip:"Think: close the car door with your butt on the way back up", home:"Banded RDL — anchor band under feet, hold both ends, hinge forward same way.", homesets:"3 × 10-12", howto:["Stand holding dumbbells, slight knee bend","Hinge at HIPS — push butt backward not downward","Lower along legs until strong hamstring stretch","Keep back flat the entire time","Squeeze glutes and drive hips forward to stand","The stretch at the bottom is where the magic happens"] },
     { name:"Sumo Goblet Squat", area:"Inner Thighs & Glutes", emoji:"🦵", sets:"3 × 12-15", weights:["15-20 lb dumbbell","25-30 lb","35-40 lb"], notes:"Wide stance, toes out 45°. Sit DOWN between your legs — not back.", tip:"Press knees out with elbows at the bottom for a deeper stretch", home:"Bodyweight sumo squat — same wide stance, arms at chest. Add band above knees for resistance.", homesets:"3 × 15-20", howto:["Feet wider than shoulder-width, toes out 45°","Hold dumbbell vertically at chest","Sit DOWN between legs — different from regular squat","Chest tall, knees tracking over toes","Elbows press knees wider at the bottom","Drive through heels to stand, squeeze glutes at top"] },
-    { name:"Cable Kickback", area:"Glutes — Isolation", emoji:"🦶", sets:"3 × 15 each", weights:["15-20 lb","20-25 lb","25-35 lb"], notes:"Ankle strap on cable. Kick straight back — do not rotate your hip.", tip:"Slight forward lean and PAUSE at the top — the pause is everything", home:"Banded kickback — anchor band low, loop around ankle, kick straight back.", homesets:"3 × 15 each", howto:["Ankle strap on cable at low setting","Face machine, hold bar, slight forward lean","Core tight, working leg slightly bent","Kick leg STRAIGHT back — not to the side","Squeeze glute hard at top, hold 1 second","Lower slowly, resist the cable on the way back"] },
+    { name:"Standing Kickback", area:"Glutes — Isolation", emoji:"🦶", sets:"3 × 15 each", weights:["15-20 lb ankle weight","20-25 lb ankle weight","25-30 lb ankle weight"], notes:"Stand tall, slight forward lean. Kick straight back — squeeze hard at the top and hold.", tip:"Slow controlled reps beat fast sloppy ones every time — pause at the top", home:"Banded kickback — anchor band low, loop around ankle, kick straight back.", homesets:"3 × 15 each", howto:["Stand facing a wall or bench for balance support","Ankle weight on working leg, slight forward lean","Core tight, standing leg slightly bent","Kick working leg STRAIGHT back — not to the side","Squeeze glute hard at top, hold 1 second","Lower slowly with control — resist gravity on the way down"] },
     { name:"Seated Abduction Machine", area:"Glute Medius", emoji:"↔️", sets:"3 × 20", weights:["Light-moderate","Moderate","Moderate-heavy"], notes:"Pads on outside of knees. Push OUT and hold 2 seconds.", tip:"Lean slightly forward to shift work to glute medius instead of TFL", home:"Banded seated abduction — sit on chair, band above knees, push knees OUT and hold 2 seconds.", homesets:"3 × 20", howto:["Sit upright, pads against outside of knees","Feet flat, core engaged","Push legs OUT — slow and controlled","Hold open 2 full seconds","Squeeze outer glutes throughout","Return slowly — do not let weight crash back"] }
   ]},
   { label:"WED", title:"🔥 Burnout Day", sub:"High reps · Rest 60 sec", homesub:"Bands & bodyweight · Rest 60 sec", exercises:[
@@ -93,7 +88,7 @@ var DAYS = [
   { label:"FRI", title:"🍑 Full Glute Day", sub:"All angles · Rest 90 sec", homesub:"Bands & bodyweight · Rest 90 sec", exercises:[
     { name:"Barbell Hip Thrust", area:"Glutes — Weekly Closer", emoji:"🏋️", sets:"5 × 10", weights:["55-65 lb","75-85 lb","95-115 lb"], notes:"Heavier than Monday. You have built up all week — finish strong.", tip:"Week over week, try to add just 5 lbs — that is progressive overload working", home:"Banded glute bridge with heaviest band — 5 sets of 10, full squeeze and hold.", homesets:"5 × 10", howto:["Upper back on bench, padded bar across hips","Feet flat, hip-width, knees bent 90°","Drive through heels and thrust hips up","Squeeze glutes HARD at top — hold 1 second","Lower slowly — 3 counts down","You know this movement now — own it"] },
     { name:"Leg Press — High & Wide Foot", area:"Glutes & Hamstrings", emoji:"🦵", sets:"4 × 15", weights:["90-110 lb","130-150 lb","160-190 lb"], notes:"Feet HIGH and WIDE on the platform. This targets glutes, not quads.", tip:"Lower until knees are at 90° — do not let your lower back lift off the seat", home:"Banded sumo squat — band above knees, wide stance, deep squat. 4 sets of 15 with 2-second hold.", homesets:"4 × 15", howto:["Set feet HIGH on the platform, wider than shoulder-width","Toes pointed slightly out","Lower sled slowly until knees reach 90°","Push through HEELS — not balls of feet","Squeeze glutes as legs extend — do not lock knees","Full controlled range of motion every rep"] },
-    { name:"Cable Kickback", area:"Glutes — Isolation", emoji:"🦶", sets:"4 × 15 each", weights:["20-25 lb","25-30 lb","30-40 lb"], notes:"Slightly heavier than Monday. Squeeze, hold, resist on the way back.", tip:"Friday is max squeeze day — hold 2 full seconds at the top", home:"Banded kickback — band anchored low, loop around ankle. Hold 2 full seconds at top.", homesets:"4 × 15 each", howto:["Ankle strap on cable at low setting","Face machine, hold bar, slight forward lean","Core tight, working leg slightly bent","Kick leg STRAIGHT back — not to the side","Squeeze glute HARD — hold 2 full seconds","Lower slowly — resist the cable the whole way down"] },
+    { name:"Standing Kickback", area:"Glutes — Isolation", emoji:"🦶", sets:"4 × 15 each", weights:["20-25 lb ankle weight","25-30 lb ankle weight","30-35 lb ankle weight"], notes:"Slightly heavier than Monday. Squeeze, hold 2 full seconds, resist on the way back.", tip:"Friday is max squeeze day — hold 2 full seconds at the top", home:"Banded kickback — band anchored low, loop around ankle. Hold 2 full seconds at top.", homesets:"4 × 15 each", howto:["Stand facing a wall or bench for balance support","Ankle weight on working leg, slight forward lean","Core tight, standing leg slightly bent","Kick working leg STRAIGHT back — not to the side","Squeeze glute HARD — hold 2 full seconds","Lower slowly — resist gravity the whole way down"] },
     { name:"Banded Lateral Walk", area:"Glute Medius — Shape", emoji:"🟣", sets:"3 × 20 steps each way", weights:["Light-medium band","Medium band","Medium-heavy band"], notes:"Band above knees, stay low in a slight squat. Never let feet fully meet.", tip:"Lower you stay, the harder your glutes work — do not rise up", home:"This IS the at-home version — band above knees, same movement.", homesets:"3 × 20 steps each way", howto:["Band just above knees, stand in slight squat","Take wide step to the side — maintain squat","Bring other foot in — but do not fully close gap","20 steps right, 20 back left = 1 set","Stay low the entire set","Hands on hips or out in front for balance"] },
     { name:"Frog Pump", area:"Glutes — Finisher", emoji:"🐸", sets:"3 × 30", weights:["Bodyweight","BW + light plate","BW + 10-15 lb plate"], notes:"Lie on back, soles of feet together, knees open like a frog. Pump hips up.", tip:"These look easy — do 30 at the end of the week and tell me that again", home:"Same movement — bodyweight frog pumps are brutal. Perfect finisher at home.", homesets:"3 × 30", howto:["Lie on back, soles of feet pressed together","Let knees fall open wide — frog position","Drive hips UP squeezing glutes hard","Small range of motion — all about the squeeze","Lower slightly and pump right back up","30 controlled reps — feel the glutes on fire"] }
   ]},
@@ -114,7 +109,6 @@ var TIPS = [
   { emoji:"⏱", title:"12-Week Timeline", body:"Weeks 1-4: Learn movements. Weeks 5-8: Add weight. Weeks 9-12: Visible shape change. Commit to the full program." }
 ];
 
-// ── LOG FORM ──────────────────────────────────────────────────
 function LogForm(props) {
   var s=useState(''),r=useState(''),w=useState(''),n=useState('');
   var sets=s[0],setSets=s[1],reps=r[0],setReps=r[1],weight=w[0],setWeight=w[1],note=n[0],setNote=n[1];
@@ -147,7 +141,6 @@ function LogForm(props) {
   );
 }
 
-// ── HISTORY VIEW ──────────────────────────────────────────────
 function HistoryView() {
   var d=useState(null),setData=d[1];d=d[0];
   var loading=useState(true),setLoading=loading[1];loading=loading[0];
@@ -216,7 +209,6 @@ function HistoryView() {
   );
 }
 
-// ── EXERCISE CARD ─────────────────────────────────────────────
 function Card(props) {
   var ex=props.ex,phase=props.phase,isDone=props.isDone,isOpen=props.isOpen,isHome=props.isHome,showLog=props.showLog;
   return React.createElement('div',{style:{background:isDone?'#0f1f0f':'#1a0030',border:'2px solid '+(isDone?'#166534':'#3b0764'),borderRadius:12,padding:'14px 16px',marginBottom:12}},
@@ -246,7 +238,6 @@ function Card(props) {
   );
 }
 
-// ── MAIN APP ──────────────────────────────────────────────────
 function App() {
   var t=useState(getInitialTab),tab=t[0],setTab=t[1];
   var m=useState('gym'),mode=m[0],setMode=m[1];
