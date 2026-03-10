@@ -1,25 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Bubble Butt Builder</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <style>
-    * {box-sizing:border-box;margin:0;padding:0;}
+    *{box-sizing:border-box;margin:0;padding:0;}
     body{background:#0a0010;font-family:system-ui,sans-serif;}
     input{background:#0a0010;border:1px solid #3b0764;border-radius:6px;color:white;padding:6px 8px;font-size:12px;width:100%;outline:none;}
     input:focus{border-color:#c084fc;}
-    .log-btn{background:#7c3aed;border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;white-space:nowrap;}
-    .log-btn:hover{opacity:0.85;}
+    .log-btn{background:#7c3aed;border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;}
     .hist-row{display:flex;justify-content:space-between;font-size:11px;color:#d8b4fe;padding:4px 0;border-bottom:1px solid #3b076422;}
     .hist-row:last-child{border-bottom:none;}
-    .hist-date{color:#c084fc;font-weight:700;font-size:11px;margin-bottom:4px;}
     .hist-block{background:#0a0010;border-radius:8px;padding:8px 10px;margin-bottom:8px;}
     .del{background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;padding:0 2px;}
     .back-btn{display:inline-flex;align-items:center;gap:6px;background:#1a0030;border:1px solid #3b0764;border-radius:8px;color:#c084fc;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;text-decoration:none;margin-bottom:12px;}
-    .back-btn:active{opacity:0.8;}
     .cal-picker{background:#1a0030;border:1px solid #3b0764;border-radius:12px;padding:12px;margin-bottom:12px;}
     .cal-picker-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
     .cal-picker-title{color:#c084fc;font-size:13px;font-weight:800;}
@@ -39,136 +36,370 @@
     .set-label{font-size:11px;font-weight:800;color:#7c3aed;text-align:center;}
     .add-set-btn{background:#0a0010;border:1px dashed #7c3aed;border-radius:8px;color:#a78bfa;font-size:12px;font-weight:700;padding:7px;cursor:pointer;width:100%;margin-top:4px;}
     .remove-set-btn{background:none;border:none;color:#6b7280;cursor:pointer;font-size:15px;line-height:1;padding:0;}
-    .remove-set-btn:hover{color:#ef4444;}
     .hist-day-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#2a0050;cursor:pointer;user-select:none;}
-    .hist-day-header:active{opacity:0.8;}
     .hist-day-title{font-size:13px;font-weight:800;color:#c084fc;}
     .hist-day-toggle{font-size:11px;color:#a78bfa;font-weight:700;}
+    .phase-badge{display:inline-block;color:white;font-size:10px;font-weight:800;border-radius:20px;padding:3px 10px;letter-spacing:1px;}
+    .week-badge{display:inline-block;background:#1a0030;border:1px solid #7c3aed;color:#c084fc;font-size:10px;font-weight:800;border-radius:20px;padding:3px 10px;margin-left:6px;}
   </style>
 </head>
 <body>
 <div id="root"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     EXERCISE DATA — 12 weeks × 3 days × gym + home
+     Weeks 1-4: same exercises, weights climb, order consistent
+     Weeks 5-8: 1-2 swaps per week, order rotates, heavier
+     Weeks 9-12: peak exercises, max weight, order rotates
+════════════════════════════════════════════════════════════ -->
 <script>
-var useState = React.useState;
-var useEffect = React.useEffect;
+var PROGRAM_START = "2026-03-09";
+
+// helpers used by data
+function ex(name,area,emoji,sets,weights,notes,tip,howto){
+  return {name:name,area:area,emoji:emoji,sets:sets,weights:weights,notes:notes,tip:tip,howto:howto};
+}
+
+// ── EXERCISE LIBRARY ─────────────────────────────────────────
+var E = {
+  // Hip Thrusts
+  hipThrust: function(sets,w,note){return ex("Barbell Hip Thrust","Glutes","🏋️",sets,w,note||"Upper back on bench, padded bar on hips. Drive through heels, squeeze hard at the top.","Hold 1 full second at the top — that squeeze is where growth happens",["Upper back rests on bench, bar padded across hips","Feet flat, hip-width, knees bent 90°","Drive through heels and thrust hips up","Squeeze glutes HARD at top — hold 1 second","Lower slowly — 3 counts down","Keep chin tucked, do not arch lower back"]);},
+  hipThrustBanded: function(sets,w,note){return ex("Banded Barbell Hip Thrust","Glutes","🏋️",sets,w,note||"Band above knees + bar. Push knees OUT against band at the top. More glute activation.","Band + bar = maximum glute activation. Drive knees OUT at the top.",["Band above knees, bar padded across hips, upper back on bench","Feet flat, hip-width, knees bent 90°","Drive through heels, push knees OUT against band","Squeeze glutes HARD — hold 1-2 seconds","Lower slowly — 3 counts down","Feel the extra burn in glute medius from the band"]);},
+  hipThrustPause: function(sets,w){return ex("Paused Hip Thrust","Glutes — Peak","🏋️",sets,w,"2-second pause at the top on EVERY rep. Heaviest weight of the program. This builds peak shape.","2 full seconds at the top every rep — no shortcuts in the peak phase",["Upper back on bench, band above knees, heavy bar on hips","Drive through heels, push knees OUT","Squeeze glutes HARD — HOLD 2 full seconds at top","Feel every muscle in your glutes working","Lower slowly — 3 counts down","This is your peak movement — own every rep"]);},
+
+  // RDL variations
+  rdl: function(sets,w){return ex("Romanian Deadlift","Hamstrings & Glutes","🏋️",sets,w,"Hinge at hips, push butt back. Feel the hamstring stretch at the bottom. Back flat throughout.","Think: close the car door with your butt on the way back up",["Stand holding dumbbells, slight knee bend","Hinge at HIPS — push butt backward","Lower along legs until strong hamstring stretch","Keep back flat the entire time","Drive hips forward to stand, squeeze glutes","The stretch at the bottom is where the magic happens"]);},
+  rdlSlow: function(sets,w){return ex("Romanian Deadlift — Slow Tempo","Hamstrings & Glutes","🏋️",sets,w,"3 counts down, 1 count up. Heavier weight. The slow lowering is where gains happen.","3 seconds down, explode up. Eccentric loading builds the most muscle.",["Stand holding heavier dumbbells","Lower SLOWLY — 3 full counts down","Push butt back, deep hamstring stretch","Back flat throughout","Explode up — squeeze glutes at the top","Challenge the weight this phase"]);},
+  singleLegRDL: function(sets,w){return ex("Single-Leg Romanian Deadlift","Hamstrings & Glutes — Peak","🏋️",sets,w,"One leg at a time. Forces each glute to work independently. Go lighter than you think.","Slight bend in standing knee — focus on the hip hinge not the balance",["Stand on one foot, slight bend in knee","Hold dumbbell in opposite hand to standing leg","Hinge at hips — lower dumbbell toward floor","Keep back flat, feel single-leg hamstring stretch","Drive hips forward to stand, squeeze glute","Complete all reps, switch legs"]);},
+
+  // Squat variations
+  sumoGoblet: function(sets,w){return ex("Sumo Goblet Squat","Inner Thighs & Glutes","🦵",sets,w,"Wide stance, toes out 45°. Sit DOWN between your legs — not back.","Press knees out with elbows at the bottom for a deeper stretch",["Feet wider than shoulder-width, toes out 45°","Hold dumbbell vertically at chest","Sit DOWN between legs","Chest tall, knees tracking over toes","Elbows press knees wider at the bottom","Drive through heels to stand, squeeze at top"]);},
+  sumoGobletPause: function(sets,w){return ex("Sumo Goblet Squat — Pause","Inner Thighs & Glutes","🦵",sets,w,"3-second pause at the bottom every rep. Heavier than last phase. Maximum stretch and tension.","3 seconds at the bottom — that's where the glute stretch is deepest",["Feet wider than shoulder-width, toes out 45°","Heavier dumbbell at chest","Sit DOWN between legs — as deep as comfortable","PAUSE 3 full seconds at bottom","Drive through heels to stand","Squeeze glutes and inner thighs hard at top"]);},
+  bulgarianSplit: function(sets,w){return ex("Bulgarian Split Squat","Glutes & Quads","🦵",sets,w,"Back foot on bench, front foot forward. Lower straight DOWN. Front heel drives you up.","The further forward your front foot, the more glute you recruit",["Stand 2 feet in front of a bench","Rest top of back foot on bench","Hold dumbbells at sides","Lower straight DOWN — back knee toward floor","Front knee tracks over toes","Drive through front HEEL to stand — squeeze glute at top"]);},
+  bulgarianSplitHeavy: function(sets,w){return ex("Bulgarian Split Squat — Heavy","Glutes & Quads — Build","🦵",sets,w,"Heavier than last phase. Full depth — back knee touches floor. This builds serious glute shape.","Lead with your front heel on the way up — keeps work in the glute",["Back foot elevated, front foot well forward","Heavier dumbbells at sides","Lower straight DOWN — back knee touches floor","Drive through FRONT HEEL to stand","Squeeze glute at top of every rep","Heavier than last week — challenge it"]);},
+  rearFootElevated: function(sets,w){return ex("Rear Foot Elevated Split Squat","Glutes — Peak","🦵",sets,w,"Peak phase. Heaviest split squat yet. Full depth every rep. This builds serious shape.","Front heel drives you up — that keeps the glute doing the work",["Back foot elevated on bench, front foot well forward","Heaviest dumbbells at sides","Lower — back knee touches floor","Drive through FRONT HEEL to stand","Squeeze glute hard at top","4 sets — this is your peak shape builder"]);},
+
+  // Kickbacks
+  standingKickback: function(sets,w,note){return ex("Standing Kickback","Glutes — Isolation","🦶",sets,w,note||"Stand tall, slight forward lean. Kick straight back, squeeze hard at top, hold 1 second.","Slow controlled reps beat fast sloppy ones — pause at the top",["Stand facing wall or bench, ankle weight on working leg","Slight forward lean, core tight","Standing leg slightly bent","Kick working leg STRAIGHT back — not to the side","Squeeze glute hard at top, hold 1 second","Lower slowly — resist gravity on the way down"]);},
+  standingKickbackHold: function(sets,w){return ex("Standing Kickback — 2 sec Hold","Glutes — Isolation","🦶",sets,w,"Heavier ankle weight. Hold 2 full seconds at the top on every rep.","2 seconds at top, 3 counts down — slow and heavy wins",["Stand facing wall, heavier ankle weight","Slight forward lean, core tight","Kick STRAIGHT back — not to the side","Squeeze HARD — hold 2 full seconds","Lower — 3 full counts down","Control the whole movement"]);},
+  cableKickback: function(sets,w){return ex("Cable Kickback","Glutes — Isolation","🦶",sets,w,"Cable with ankle attachment. Stand tall, kick straight back, hold 2 seconds. Constant tension throughout.","Cable keeps tension on the whole movement — more effective than free weights",["Attach ankle cuff to low cable pulley","Stand facing machine, slight forward lean","Core tight, hold machine for balance","Kick working leg STRAIGHT back","Squeeze glute HARD at top — hold 2 seconds","Lower slowly against resistance — do not let it snap back"]);},
+  cableKickbackHeavy: function(sets,w){return ex("Cable Kickback — Heavy","Glutes — Isolation Peak","🦶",sets,w,"Heaviest cable weight of program. 2 full seconds at top every rep. 4 sets.","2 seconds at top every rep — peak isolation work",["Ankle cuff on low cable, heavier setting","Stand facing machine, slight forward lean","Kick STRAIGHT back — control the movement","Squeeze HARD — hold 2 full seconds","Lower — 3 full counts against resistance","4 sets each leg"]);},
+
+  // Abduction
+  abductionMachine: function(sets,w){return ex("Seated Abduction Machine","Glute Medius","↔️",sets,w,"Pads on outside of knees. Push OUT and hold 2 seconds.","Lean slightly forward to shift work to glute medius instead of TFL",["Sit upright, pads against outside of knees","Feet flat, core engaged","Push legs OUT — slow and controlled","Hold open 2 full seconds","Squeeze outer glutes throughout","Return slowly"]);},
+  abductionMachineHeavy: function(sets,w){return ex("Seated Abduction Machine — Heavy","Glute Medius — Build","↔️",sets,w,"Heavier weight this phase. Hold 2 seconds. You should feel the outer glute working hard.","Go heavier than you think — this muscle responds to load",["Sit upright, heavier weight set","Pads against outside of knees","Push legs OUT — slow and controlled","Hold 2 full seconds — squeeze hard","Return slowly — do not let weight crash back","Heavier than last phase"]);},
+  abductionDrop: function(sets,w){return ex("Abduction Machine — Drop Set","Glute Medius — Peak","↔️",sets,w,"20 reps at working weight, immediately drop 20% and do 10 more. Deep burn in glute medius.","Drop straight into the lighter weight — no rest between working set and drop",["Set weight heavier than last phase","Do 20 reps — slow, hold 2 seconds each","Immediately drop weight 20%","Do 10 more reps — lighter but burning","3 rounds total","Peak outer glute work"]);},
+  clamshell: function(sets,w){return ex("Side-Lying Clamshell","Glute Medius — Outer Round","↔️",sets,w,"Band above knees, feet together. Open top knee — do not let pelvis rock.","Targets outer roundness — do not skip it just because it feels easy",["Lie on side, band above knees","Hips stacked, knees bent 45°, feet together","Keep feet together, rotate top knee upward","Do not let pelvis roll backward","Hold open 2 seconds, squeeze outer glute","Lower slowly, complete reps then flip"]);},
+  lateralWalk: function(sets,w){return ex("Banded Lateral Walk","Glute Medius — Shape","🟣",sets,w,"Band above knees, stay low in slight squat. Never let feet fully meet.","Lower you stay, the harder your glutes work — do not rise up",["Band above knees, stand in slight squat","Wide step to the side — maintain squat","Other foot follows — do not fully close gap","20 steps right, 20 back left = 1 set","Stay low the entire set","Hands on hips for balance"]);},
+
+  // Leg Press
+  legPress: function(sets,w){return ex("Leg Press — High & Wide","Glutes & Hamstrings","🦵",sets,w,"Feet HIGH and WIDE on platform. This targets glutes not quads.","Lower until knees at 90° — do not let lower back lift off seat",["Set feet HIGH on platform, wider than shoulder-width","Toes pointed slightly out","Lower sled slowly — knees to 90°","Push through HEELS — not balls of feet","Squeeze glutes as legs extend","Full range of motion every rep"]);},
+  legPressHeavy: function(sets,w){return ex("Leg Press — High & Wide Heavy","Glutes & Hamstrings — Build","🦵",sets,w,"Heavier this phase. Same foot position — high and wide. Challenge the weight.","Back flat against seat — if it lifts, reduce the weight",["Feet HIGH and WIDE, toes out","Lower sled slowly — knees to 90°","Push through HEELS","Squeeze glutes as you press","Do not lock knees at top","Heavier than last phase — challenge it"]);},
+  legPressPeak: function(sets,w){return ex("Leg Press — Peak","Glutes & Hamstrings — Peak","🦵",sets,w,"Heaviest leg press of program. 5 sets. Slow and controlled every rep.","5 sets at peak weight — back stays flat, full range every rep",["Feet HIGH and WIDE, toes out","Lower SLOWLY — full 90° at knee","Push through HEELS","Squeeze glutes as you press","Do not lock knees","5 sets — peak work"]);},
+
+  // Sumo Deadlift
+  sumoDL: function(sets,w){return ex("Sumo Deadlift","Glutes, Hamstrings & Inner Thighs","🏋️",sets,w,"Wide stance, toes out. Push the floor apart as you drive up.","Squeeze inner thighs toward each other as you lock out",["Feet wide, toes out 45°","Grip inside legs, chest up, back flat","Push floor APART as you drive up","Squeeze glutes hard at lockout","Lower with control — 3 counts","Do not drop the weight"]);},
+  sumoDLHeavy: function(sets,w){return ex("Sumo Deadlift — Heavy","Glutes, Hamstrings & Inner Thighs","🏋️",sets,w,"Heavier this phase. You know the movement — challenge the weight.","Push the floor apart — that cue keeps inner thighs and glutes engaged",["Feet wide, toes out 45°","Chest up, back flat","Push floor APART with maximum force","Squeeze glutes and inner thighs at lockout","Lower with control — 3 counts","Go heavier than last phase"]);},
+
+  // Glute bridges (home)
+  gluteBridge: function(sets,w){return ex("Banded Glute Bridge","Glutes","🏠",sets,w,"Heavy band above knees, drive up and squeeze hard. Add dumbbell on hips when ready.","Touch your glutes before the set — neural cue increases activation",["Lie on back, band above knees, feet flat","Drive hips up — push knees OUT against band","Squeeze glutes HARD at top — hold 1 second","Lower slowly — 3 counts","Core braced throughout","If you feel hamstrings more, bring feet slightly closer"]);},
+  gluteBridgeWeighted: function(sets,w){return ex("Weighted Glute Bridge","Glutes — Build","🏠",sets,w,"Heaviest band + dumbbell on hips. 2-second hold at top.","Press dumbbell into hips with both hands so it doesn't slide",["Lie on back, band above knees, dumbbell on hips","Drive hips up — push knees OUT against band","Squeeze HARD — hold 2 seconds","Lower slowly — 3 counts","Heavier than last phase","You should feel this more than before"]);},
+  gluteBridgePulse: function(sets,w){return ex("Glute Bridge — Pulse Finish","Glutes — Peak","🏠",sets,w,"After 10 full reps, hold at top and pulse 10 times before lowering. Maximum burn.","Pulses at the top finish off the muscle completely — don't skip them",["Lie on back, heaviest band + heavy dumbbell on hips","Do 10 full reps with 2-second hold","On last rep — HOLD at top","Pulse 10 times — small range, stay up","Then lower — that is one set","Feel the fire in both glutes"]);},
+
+  // Home squat
+  bwSumo: function(sets,w){return ex("Bodyweight Sumo Squat","Inner Thighs & Glutes","🏠",sets,w,"Wide stance, toes out. Band above knees. Pause 2 seconds at bottom.","Pause at bottom — feel the inner thigh and glute stretch",["Feet wider than shoulder-width, toes out 45°","Band above knees, arms at chest","Sit DOWN between legs — knees out","Pause 2 seconds at bottom","Drive through heels to stand","Squeeze glutes at top"]);},
+  bwSumoWeighted: function(sets,w){return ex("Sumo Squat — Weighted","Inner Thighs & Glutes — Build","🏠",sets,w,"Heaviest dumbbell at chest, band above knees. 3-second pause at bottom.","3 seconds at bottom — deepest glute stretch of the week",["Heaviest dumbbell at chest, band above knees","Feet wide, toes out 45°","Squat DEEP — 3-second pause at bottom","Push knees OUT throughout","Drive through heels to stand","Squeeze hard at top"]);},
+  bwSumoTempo: function(sets,w){return ex("Sumo Squat — Slow Tempo","Inner Thighs & Glutes — Peak","🏠",sets,w,"4 counts down, hold 3 seconds at bottom, 1 count up. Maximum time under tension.","Slow tempo builds more muscle than heavy weight alone",["Heaviest dumbbell, band above knees","4 counts down — controlled","Hold 3 seconds at bottom","Drive up in 1 count — explode","Squeeze at top","This is the hardest squat variation of the program"]);},
+
+  // Home kickback
+  bandedKickback: function(sets,w){return ex("Banded Kickback","Glutes — Isolation","🏠",sets,w,"Anchor band at floor level, loop around ankle. Kick straight back, hold 1 second.","Hold 1 full second at top — that squeeze builds the shape",["Anchor band at floor level behind you","Loop band around working ankle","Stand tall, slight forward lean, core tight","Kick STRAIGHT back — not to the side","Squeeze glute hard at top, hold 1 second","Lower slowly — resist the band"]);},
+  bandedKickbackHold: function(sets,w){return ex("Banded Kickback — 2 sec Hold","Glutes — Isolation Build","🏠",sets,w,"Heavier band. Hold 2 full seconds at top. Resist on the way back.","The heavier the band, the more you must control the return",["Anchor heavier band at floor level","Loop around working ankle","Kick STRAIGHT back — not to the side","Hold at top 2 full seconds, squeeze hard","Resist the band slowly on the way back","Heavier band this phase"]);},
+  donkeyKick: function(sets,w){return ex("Donkey Kick","Glutes — Isolation","🦶",sets,w,"On all fours. Kick UP toward ceiling — sole faces up. Squeeze and hold.","Slow is more effective than fast — squeeze, do not rush",["On all fours, wrists under shoulders","Keep knee bent 90° throughout","Kick leg UP toward ceiling — sole faces up","Squeeze glute HARD, hold 1-2 seconds","Keep hips square — do not rotate","Lower slowly"]);},
+  donkeyKickHeavy: function(sets,w){return ex("Donkey Kick — Heavy","Glutes — Build","🦶",sets,w,"Heavy ankle weight AND band stacked. 2 seconds at top. Keep hips square.","Stack ankle weight AND band for cable-like resistance",["On all fours, ankle weight AND band on working leg","Keep knee bent 90°","Kick UP toward ceiling — sole faces up","Squeeze HARD at top — hold 2 seconds","Keep hips absolutely square","Lower slowly — resist both"]);},
+
+  // Finishers
+  frogPump: function(sets,w){return ex("Frog Pump","Glutes — Finisher","🐸",sets,w,"Lie on back, soles together, knees open. Pump hips up and squeeze.","These look easy — do 30 at the end of the week and then tell me that",["Lie on back, soles of feet pressed together","Knees fall open wide — frog position","Drive hips UP squeezing glutes","Small range of motion — all squeeze","Lower slightly and pump back up","30 reps — feel the glutes on fire"]);},
+  frogPumpWeighted: function(sets,w){return ex("Weighted Frog Pump","Glutes — Finisher Build","🐸",sets,w,"Plate or dumbbell on hips. 30 loaded reps is much harder than bodyweight.","Add load and feel the immediate difference",["Lie on back, soles together, knees open","Hold weight on hips","Drive hips UP squeezing glutes","30 reps with load — small range","Lower slightly between reps — keep tension","Close the week strong"]);},
+  singleLegBridge: function(sets,w){return ex("Single-Leg Glute Bridge","Glutes — Finisher","🏋️",sets,w,"One foot flat, other leg extended. Drive through planted heel, hips level.","Keep hips level — if one side drops, the glute isn't firing",["Lie on back, one foot flat, other leg extended","Drive through planted heel to lift hips","Squeeze working glute as hard as possible","Keep hips level throughout","Lower slowly","Switch legs after all reps"]);},
+  singleLegBridgeWeighted: function(sets,w){return ex("Single-Leg Glute Bridge — Weighted","Glutes — Finisher Build","🏋️",sets,w,"Plate on hip this phase. Heavier = more glute challenge.","Add load — bodyweight alone won't challenge you anymore",["Lie on back, plate on working hip","One foot flat, other leg extended","Drive through planted heel to lift hips","Squeeze working glute — hips level","Lower slowly","Switch legs"]);},
+
+  // Warm-up
+  warmLateralWalk: function(){return ex("Banded Lateral Walk","Glute Medius Activation","🟣","2 × 15 steps each way","Light band","Light band above knees, slight squat. Constant tension — never let feet meet.","Constant tension = activation — never let feet fully meet",["Band above knees, slight squat","Step sideways — never let feet fully meet","15 steps each way = 1 set","Stay low throughout","Core engaged","Activates glute medius before your workout"]);},
+  warmBridge: function(){return ex("Bodyweight Glute Bridge","Glute Max Activation","🦵","2 × 15","Bodyweight","Touch your glutes before each set. Feel them work — not your back.","Touch your glutes — neural cue increases activation by 20-30%",["Lie on back, feet flat, knees bent","Touch your glutes — neural cue","Drive hips up, squeeze HARD at top","Hold 2 seconds","Lower slowly","If you feel hamstrings more, bring feet slightly closer"]);},
+  warmClamshell: function(){return ex("Banded Clamshell","Glute Medius Activation","↔️","2 × 15 each","Light band","Side-lying, light band, feet together. Open knee — pelvis stays completely still.","If your hip rocks, the band is too heavy",["Lie on side, light band above knees","Hips stacked, knees bent 45°, feet together","Rotate top knee upward — pelvis STAYS still","Hold 1-2 seconds, squeeze outer glute","Lower slowly","Switch sides after all reps"]);},
+  warmHipCircle: function(){return ex("Hip Circle","Hip Joint Warm-Up","🦶","10 each direction, each leg","Bodyweight","On all fours, draw big slow circles with one knee. Full range of motion.","Big slow circles — lubricates the joint before loading",["On all fours, wrists under shoulders","Bring one knee up and out to side","Draw large slow circle — forward, up, back, down","Make circle as big as comfortable","10 forward, 10 backward, switch legs","Important for back and hip joint health"]);},
+};
+
+// ── WARM-UP (same every week) ────────────────────────────────
+var WARMUP = [E.warmLateralWalk(), E.warmBridge(), E.warmClamshell(), E.warmHipCircle()];
+
+// ── 12-WEEK PROGRAM ──────────────────────────────────────────
+// Structure: WEEKS[weekNum][dayIndex 0=Mon,1=Wed,2=Fri][gym|home]
+var WEEKS = {};
+
+// ── WEEKS 1-4: Foundation ────────────────────────────────────
+WEEKS[1] = {
+  0: { // MON
+    gym:  [E.hipThrust("4 × 10-12","45 lb bar"), E.rdl("3 × 10-12","20-25 lb"), E.sumoGoblet("3 × 12-15","15-20 lb"), E.standingKickback("3 × 15 each","15-20 lb ankle weight"), E.abductionMachine("3 × 20","Light")],
+    home: [E.gluteBridge("4 × 10-12","Heavy band above knees"), E.bwSumo("3 × 12-15","Band above knees"), E.bandedKickback("3 × 15 each","Light band"), E.donkeyKick("3 × 15 each","Bodyweight"), E.lateralWalk("3 × 15 steps each way","Light band")]
+  },
+  1: { // WED
+    gym:  [E.sumoDL("4 × 12","45-55 lb"), E.clamshell("3 × 20 each","Light band"), E.donkeyKick("3 × 15 each","Bodyweight"), E.sumoGoblet("4 × 15","15 lb"), E.singleLegBridge("3 × 12 each","Bodyweight")],
+    home: [E.donkeyKick("3 × 15 each","Bodyweight"), E.clamshell("3 × 20 each","Light band"), E.bwSumo("4 × 15","Band above knees"), E.bandedKickback("3 × 15 each","Light band"), E.singleLegBridge("3 × 12 each","Bodyweight")]
+  },
+  2: { // FRI
+    gym:  [E.hipThrust("5 × 10","55-65 lb"), E.legPress("4 × 15","90-110 lb"), E.standingKickback("4 × 15 each","20-25 lb ankle weight","Slightly heavier than Monday. Squeeze 2 full seconds at top."), E.lateralWalk("3 × 20 steps each way","Light-medium band"), E.frogPump("3 × 30","Bodyweight")],
+    home: [E.gluteBridge("5 × 10","Heavy band + dumbbell on hips"), E.bwSumoWeighted("4 × 15","Band + dumbbell at chest"), E.bandedKickback("4 × 15 each","Medium band + ankle weight","Slightly heavier than Monday. 2 full seconds at top."), E.lateralWalk("3 × 20 steps each way","Medium band"), E.frogPump("3 × 30","Bodyweight")]
+  }
+};
+
+WEEKS[2] = {
+  0: {
+    gym:  [E.hipThrust("4 × 10-12","55 lb"), E.rdl("3 × 10-12","25-30 lb"), E.sumoGoblet("3 × 12-15","20 lb"), E.standingKickback("3 × 15 each","20 lb ankle weight"), E.abductionMachine("3 × 20","Light-moderate")],
+    home: [E.gluteBridge("4 × 10-12","Heavy band + light dumbbell"), E.bwSumo("3 × 12-15","Band + light dumbbell"), E.bandedKickback("3 × 15 each","Light-medium band"), E.donkeyKick("3 × 15 each","Light ankle weight"), E.lateralWalk("3 × 15 steps each way","Light-medium band")]
+  },
+  1: {
+    gym:  [E.sumoDL("4 × 12","50-60 lb"), E.clamshell("3 × 20 each","Light-medium band"), E.donkeyKick("3 × 15 each","5 lb ankle weight"), E.sumoGoblet("4 × 15","20 lb"), E.singleLegBridge("3 × 12 each","Bodyweight")],
+    home: [E.donkeyKick("3 × 15 each","Light ankle weight"), E.clamshell("3 × 20 each","Light-medium band"), E.bwSumo("4 × 15","Band + light dumbbell"), E.bandedKickback("3 × 15 each","Medium band"), E.singleLegBridge("3 × 12 each","Bodyweight")]
+  },
+  2: {
+    gym:  [E.hipThrust("5 × 10","65-70 lb"), E.legPress("4 × 15","100-120 lb"), E.standingKickback("4 × 15 each","20-25 lb ankle weight","Hold 2 full seconds at top every rep."), E.lateralWalk("3 × 20 steps each way","Medium band"), E.frogPump("3 × 30","Bodyweight")],
+    home: [E.gluteBridge("5 × 10","Heavy band + dumbbell"), E.bwSumoWeighted("4 × 15","Band + heavier dumbbell"), E.bandedKickback("4 × 15 each","Medium band + ankle weight"), E.lateralWalk("3 × 20 steps each way","Medium band"), E.frogPump("3 × 30","Bodyweight")]
+  }
+};
+
+WEEKS[3] = {
+  0: {
+    gym:  [E.hipThrust("4 × 10-12","60-65 lb"), E.sumoGoblet("3 × 12-15","20-25 lb"), E.rdl("3 × 10-12","25-30 lb"), E.abductionMachine("3 × 20","Moderate"), E.standingKickback("3 × 15 each","20-22 lb ankle weight")],
+    home: [E.gluteBridge("4 × 10-12","Heavy band + dumbbell"), E.bwSumo("3 × 12-15","Band + medium dumbbell"), E.bandedKickback("3 × 15 each","Medium band"), E.lateralWalk("3 × 15 steps each way","Medium band"), E.donkeyKick("3 × 15 each","Light-medium ankle weight")]
+  },
+  1: {
+    gym:  [E.sumoGoblet("4 × 15","20-22 lb"), E.sumoDL("4 × 12","55-65 lb"), E.clamshell("3 × 20 each","Medium band"), E.singleLegBridge("3 × 12 each","Bodyweight"), E.donkeyKick("3 × 15 each","5-8 lb ankle weight")],
+    home: [E.bwSumo("4 × 15","Band + dumbbell"), E.clamshell("3 × 20 each","Medium band"), E.donkeyKick("3 × 15 each","Medium ankle weight"), E.bandedKickback("3 × 15 each","Medium band"), E.singleLegBridge("3 × 12 each","Bodyweight")]
+  },
+  2: {
+    gym:  [E.hipThrust("5 × 10","70-75 lb"), E.legPress("4 × 15","110-130 lb"), E.lateralWalk("3 × 20 steps each way","Medium band"), E.standingKickback("4 × 15 each","22-25 lb ankle weight","Hold 2 full seconds at top."), E.frogPump("3 × 30","Bodyweight")],
+    home: [E.gluteBridge("5 × 10","Heavy band + heavier dumbbell"), E.lateralWalk("3 × 20 steps each way","Medium-heavy band"), E.bwSumoWeighted("4 × 15","Band + heavy dumbbell"), E.bandedKickback("4 × 15 each","Medium-heavy band + ankle weight"), E.frogPump("3 × 30","Bodyweight")]
+  }
+};
+
+WEEKS[4] = {
+  0: {
+    gym:  [E.hipThrust("4 × 10-12","65-70 lb"), E.rdlSlow("3 × 10-12","30-35 lb"), E.sumoGobletPause("3 × 12","22-25 lb"), E.standingKickback("3 × 15 each","22-25 lb ankle weight"), E.abductionMachine("4 × 20","Moderate")],
+    home: [E.gluteBridgeWeighted("4 × 10-12","Heaviest band + dumbbell"), E.bwSumoWeighted("3 × 12","Band + dumbbell"), E.bandedKickbackHold("3 × 15 each","Medium-heavy band"), E.donkeyKick("3 × 15 each","Medium ankle weight"), E.lateralWalk("3 × 20 steps each way","Medium band")]
+  },
+  1: {
+    gym:  [E.sumoDL("4 × 12","60-70 lb"), E.clamshell("4 × 20 each","Medium band"), E.sumoGobletPause("4 × 15","20 lb"), E.singleLegBridge("3 × 12 each","Bodyweight"), E.donkeyKick("3 × 15 each","8-10 lb ankle weight")],
+    home: [E.clamshell("4 × 20 each","Medium band"), E.bwSumoWeighted("4 × 15","Band + dumbbell"), E.donkeyKickHeavy("3 × 15 each","Medium ankle weight + band"), E.bandedKickback("3 × 15 each","Medium-heavy band"), E.singleLegBridge("3 × 12 each","Bodyweight")]
+  },
+  2: {
+    gym:  [E.hipThrust("5 × 10","75-80 lb"), E.legPress("4 × 15","120-140 lb"), E.standingKickbackHold("4 × 15 each","25 lb ankle weight"), E.lateralWalk("3 × 20 steps each way","Medium-heavy band"), E.frogPumpWeighted("3 × 30","BW + light plate")],
+    home: [E.gluteBridgeWeighted("5 × 10","Heaviest band + heavy dumbbell"), E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"), E.lateralWalk("3 × 20 steps each way","Heavy band"), E.frogPumpWeighted("3 × 30","Dumbbell on hips")]
+  }
+};
+
+// ── WEEKS 5-8: Build — 1-2 exercise swaps, heavier ──────────
+WEEKS[5] = {
+  0: {
+    gym:  [E.hipThrustBanded("4 × 10-12","65-75 lb"), E.rdlSlow("4 × 10-12","30-35 lb"), E.bulgarianSplit("3 × 10 each","10-15 lb"), E.standingKickbackHold("3 × 15 each","22-25 lb ankle weight"), E.abductionMachineHeavy("3 × 20","Moderate")],
+    home: [E.gluteBridgeWeighted("4 × 10-12","Heaviest band + heavy dumbbell"), E.bwSumoWeighted("3 × 12-15","Band + heavy dumbbell"), E.bandedKickbackHold("3 × 15 each","Heavy band"), E.donkeyKickHeavy("3 × 15 each","Medium ankle weight + band"), E.lateralWalk("3 × 20 steps each way","Heavy band")]
+  },
+  1: {
+    gym:  [E.sumoDLHeavy("4 × 12","65-75 lb"), E.cableKickback("3 × 15 each","Light-moderate cable"), E.clamshell("4 × 20 each","Medium band"), E.sumoGobletPause("4 × 15","22-25 lb"), E.singleLegBridgeWeighted("3 × 12 each","BW + 10 lb plate")],
+    home: [E.bwSumoWeighted("4 × 15","Band + heavy dumbbell"), E.donkeyKickHeavy("3 × 15 each","Medium-heavy ankle weight + band"), E.clamshell("4 × 20 each","Medium-heavy band"), E.bandedKickbackHold("3 × 15 each","Heavy band"), E.singleLegBridgeWeighted("3 × 12 each","Dumbbell on hip")]
+  },
+  2: {
+    gym:  [E.hipThrustBanded("5 × 10","75-85 lb"), E.legPressHeavy("4 × 15","130-150 lb"), E.cableKickback("4 × 15 each","Moderate cable"), E.lateralWalk("3 × 20 steps each way","Medium-heavy band"), E.frogPumpWeighted("3 × 30","BW + light plate")],
+    home: [E.gluteBridgeWeighted("5 × 10","Heaviest band + heavy dumbbell"), E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"), E.lateralWalk("3 × 20 steps each way","Heavy band"), E.frogPumpWeighted("3 × 30","Dumbbell on hips")]
+  }
+};
+
+WEEKS[6] = {
+  0: {
+    gym:  [E.hipThrustBanded("4 × 10-12","70-80 lb"), E.bulgarianSplit("3 × 10 each","12-18 lb"), E.rdlSlow("4 × 10-12","33-38 lb"), E.abductionMachineHeavy("4 × 20","Moderate"), E.standingKickbackHold("3 × 15 each","25 lb ankle weight")],
+    home: [E.gluteBridgeWeighted("4 × 10-12","Heaviest band + heavier dumbbell"), E.donkeyKickHeavy("3 × 15 each","Heavy ankle weight + band"), E.bwSumoWeighted("3 × 12","Band + heaviest dumbbell"), E.lateralWalk("3 × 20 steps each way","Heavy band"), E.bandedKickbackHold("3 × 15 each","Heavy band")]
+  },
+  1: {
+    gym:  [E.cableKickback("3 × 15 each","Moderate cable"), E.sumoDLHeavy("4 × 12","70-80 lb"), E.sumoGobletPause("4 × 15","25 lb"), E.clamshell("4 × 20 each","Medium-heavy band"), E.singleLegBridgeWeighted("3 × 12 each","BW + 10-15 lb")],
+    home: [E.donkeyKickHeavy("3 × 15 each","Heavy ankle weight + band"), E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"), E.clamshell("4 × 20 each","Heavy band"), E.singleLegBridgeWeighted("3 × 12 each","Dumbbell on hip"), E.bandedKickbackHold("3 × 15 each","Heavy band")]
+  },
+  2: {
+    gym:  [E.hipThrustBanded("5 × 10","80-90 lb"), E.legPressHeavy("4 × 15","140-160 lb"), E.lateralWalk("4 × 20 steps each way","Heavy band"), E.cableKickback("4 × 15 each","Moderate cable"), E.frogPumpWeighted("3 × 30","Light plate")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + dumbbell"), E.lateralWalk("4 × 20 steps each way","Heavy band"), E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"), E.frogPumpWeighted("3 × 30","Heavy dumbbell")]
+  }
+};
+
+WEEKS[7] = {
+  0: {
+    gym:  [E.hipThrustBanded("5 × 10","75-85 lb"), E.rdlSlow("4 × 10-12","35-40 lb"), E.bulgarianSplitHeavy("3 × 10 each","15-20 lb"), E.cableKickback("3 × 15 each","Moderate cable"), E.abductionMachineHeavy("4 × 20","Moderate-heavy")],
+    home: [E.gluteBridgePulse("4 × 10 + 10 pulses","Heaviest band + dumbbell"), E.bwSumoTempo("3 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"), E.donkeyKickHeavy("3 × 15 each","Heavy ankle weight + band"), E.lateralWalk("4 × 20 steps each way","Heavy band")]
+  },
+  1: {
+    gym:  [E.sumoDLHeavy("5 × 10","75-85 lb"), E.sumoGobletPause("4 × 15","25-28 lb"), E.cableKickback("4 × 15 each","Moderate cable"), E.clamshell("4 × 20 each","Heavy band"), E.singleLegBridgeWeighted("3 × 12 each","BW + 15 lb")],
+    home: [E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heavy ankle weight + band"), E.clamshell("4 × 20 each","Heavy band"), E.bandedKickbackHold("4 × 15 each","Heaviest band"), E.singleLegBridgeWeighted("3 × 12 each","Heavy dumbbell on hip")]
+  },
+  2: {
+    gym:  [E.hipThrustBanded("5 × 10","85-90 lb"), E.legPressHeavy("5 × 15","150-170 lb"), E.cableKickback("4 × 15 each","Moderate-heavy cable"), E.lateralWalk("4 × 20 steps each way","Heavy band"), E.frogPumpWeighted("3 × 30","Moderate plate")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heavy dumbbell"), E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heavy dumbbell")]
+  }
+};
+
+WEEKS[8] = {
+  0: {
+    gym:  [E.hipThrustBanded("5 × 10","80-90 lb"), E.bulgarianSplitHeavy("4 × 10 each","18-22 lb"), E.rdlSlow("4 × 10-12","38-45 lb"), E.abductionMachineHeavy("4 × 20","Moderate-heavy"), E.cableKickback("4 × 15 each","Moderate cable")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heavy dumbbell"), E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bandedKickbackHold("4 × 15 each","Heaviest band"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
+  },
+  1: {
+    gym:  [E.sumoDLHeavy("5 × 10","80-90 lb"), E.cableKickback("4 × 15 each","Moderate-heavy cable"), E.sumoGobletPause("4 × 15","28-30 lb"), E.abductionMachineHeavy("4 × 20","Moderate-heavy"), E.singleLegBridgeWeighted("3 × 12 each","BW + 15-20 lb")],
+    home: [E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.clamshell("4 × 20 each","Heaviest band"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.singleLegBridgeWeighted("3 × 12 each","Heaviest dumbbell on hip")]
+  },
+  2: {
+    gym:  [E.hipThrustBanded("5 × 10","88-95 lb"), E.legPressHeavy("5 × 15","160-180 lb"), E.cableKickback("4 × 15 each","Moderate-heavy cable"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Moderate-heavy plate")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + heaviest ankle weight"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]
+  }
+};
+
+// ── WEEKS 9-12: Peak ─────────────────────────────────────────
+WEEKS[9] = {
+  0: {
+    gym:  [E.hipThrustPause("5 × 10","88-95 lb"), E.singleLegRDL("3 × 10 each","20-25 lb"), E.rearFootElevated("4 × 10 each","18-22 lb"), E.cableKickbackHeavy("4 × 15 each","Moderate-heavy cable"), E.abductionDrop("3 × 20 + drop","Moderate-heavy")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
+  },
+  1: {
+    gym:  [E.sumoDLHeavy("5 × 10","85-95 lb"), E.cableKickbackHeavy("4 × 15 each","Heavy cable"), E.sumoGobletPause("4 × 15","30-35 lb"), E.abductionDrop("3 × 20 + drop","Moderate-heavy"), E.singleLegBridgeWeighted("3 × 15 each","BW + 15-20 lb")],
+    home: [E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.clamshell("4 × 20 each","Heaviest band"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.singleLegBridgeWeighted("3 × 15 each","Heaviest dumbbell on hip")]
+  },
+  2: {
+    gym:  [E.hipThrustPause("5 × 10","93-100 lb"), E.legPressPeak("5 × 15","165-185 lb"), E.cableKickbackHeavy("4 × 15 each","Heavy cable"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heavy plate")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + heaviest ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]
+  }
+};
+
+WEEKS[10] = {
+  0: {
+    gym:  [E.hipThrustPause("5 × 10","93-100 lb"), E.rearFootElevated("4 × 10 each","20-25 lb"), E.singleLegRDL("3 × 10 each","22-27 lb"), E.abductionDrop("3 × 20 + drop","Heavy"), E.cableKickbackHeavy("4 × 15 each","Heavy cable")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
+  },
+  1: {
+    gym:  [E.cableKickbackHeavy("4 × 15 each","Heavy cable"), E.sumoDLHeavy("5 × 10","90-100 lb"), E.abductionDrop("3 × 20 + drop","Heavy"), E.sumoGobletPause("5 × 15","33-38 lb"), E.singleLegBridgeWeighted("3 × 15 each","BW + 18-22 lb")],
+    home: [E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.clamshell("4 × 20 each","Heaviest band"), E.singleLegBridgeWeighted("3 × 15 each","Heaviest dumbbell on hip")]
+  },
+  2: {
+    gym:  [E.hipThrustPause("5 × 10","98-108 lb"), E.legPressPeak("5 × 15","175-195 lb"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.cableKickbackHeavy("4 × 15 each","Heavy cable"), E.frogPumpWeighted("3 × 30","Heavy plate")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + heaviest ankle weight"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]
+  }
+};
+
+WEEKS[11] = {
+  0: {
+    gym:  [E.hipThrustPause("5 × 10","100-110 lb"), E.singleLegRDL("4 × 10 each","25-30 lb"), E.rearFootElevated("4 × 10 each","23-28 lb"), E.cableKickbackHeavy("4 × 15 each","Heavy-max cable"), E.abductionDrop("4 × 20 + drop","Heavy")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bandedKickbackHold("5 × 15 each","Heaviest band + ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
+  },
+  1: {
+    gym:  [E.sumoDLHeavy("5 × 10","95-108 lb"), E.abductionDrop("4 × 20 + drop","Heavy"), E.cableKickbackHeavy("4 × 15 each","Heavy-max cable"), E.sumoGobletPause("5 × 15","35-40 lb"), E.singleLegBridgeWeighted("4 × 15 each","BW + 20-25 lb")],
+    home: [E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("5 × 15 each","Heaviest band + ankle weight"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.clamshell("4 × 20 each","Heaviest band"), E.singleLegBridgeWeighted("4 × 15 each","Heaviest dumbbell on hip")]
+  },
+  2: {
+    gym:  [E.hipThrustPause("5 × 10","105-115 lb"), E.legPressPeak("5 × 15","183-200 lb"), E.cableKickbackHeavy("4 × 15 each","Heavy-max cable"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heavy-max plate")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]
+  }
+};
+
+WEEKS[12] = {
+  0: {
+    gym:  [E.hipThrustPause("5 × 10","108-115 lb"), E.rearFootElevated("4 × 10 each","25-30 lb"), E.singleLegRDL("4 × 10 each","27-32 lb"), E.abductionDrop("4 × 20 + drop","Heavy-max"), E.cableKickbackHeavy("5 × 15 each","Max cable")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
+  },
+  1: {
+    gym:  [E.sumoDLHeavy("5 × 10","100-112 lb"), E.cableKickbackHeavy("5 × 15 each","Max cable"), E.abductionDrop("4 × 20 + drop","Heavy-max"), E.sumoGobletPause("5 × 15","38-45 lb"), E.singleLegBridgeWeighted("4 × 15 each","BW + 22-27 lb")],
+    home: [E.donkeyKickHeavy("5 × 15 each","Heaviest ankle weight + band"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"), E.clamshell("4 × 20 each","Heaviest band"), E.singleLegBridgeWeighted("4 × 15 each","Heaviest dumbbell on hip")]
+  },
+  2: {
+    gym:  [E.hipThrustPause("5 × 10","110-120 lb"), E.legPressPeak("5 × 15","190-210 lb"), E.cableKickbackHeavy("5 × 15 each","Max cable"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Max plate")],
+    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell — close the program! 🍑")]
+  }
+};
+
+var TIPS=[
+  {emoji:"🍑",title:"Progressive Overload",body:"Every 1-2 weeks, add 5 lbs or a heavier band, or 2 reps. Glutes need to be challenged to grow."},
+  {emoji:"💊",title:"Protein",body:"100-120g daily minimum. Prioritize protein at every meal. Muscles cannot grow without it — non-negotiable."},
+  {emoji:"🧠",title:"Mind-Muscle Connection",body:"Before every set, touch your glutes and consciously squeeze them. This neural cue increases activation by 20-30%."},
+  {emoji:"💤",title:"Sleep = Growth",body:"Glutes grow while you sleep. 7-8 hours is part of your program — not optional."},
+  {emoji:"🩺",title:"Back Safety Note",body:"Keep core braced on every movement. If you feel anything in your lower back — stop and reduce weight."},
+  {emoji:"⏱",title:"12-Week Timeline",body:"Weeks 1-4: Learn movements. Weeks 5-8: Add weight and swap exercises. Weeks 9-12: Peak weight, visible shape change."}
+];
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     REACT APP
+════════════════════════════════════════════════════════════ -->
+<script>
+var useState=React.useState,useEffect=React.useEffect;
 
 function localDay(){var n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate()).getDay();}
 function todayStr(){var n=new Date(),y=n.getFullYear(),mo=n.getMonth()+1,d=n.getDate();return y+'-'+(mo<10?'0'+mo:mo)+'-'+(d<10?'0'+d:d);}
 function friendlyDate(iso){return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
-function getInitialTab(){var d=localDay();if(d===1)return 0;if(d===3)return 1;if(d===5)return 2;if(d===2||d===6)return 1;if(d===4||d===0)return 2;return 0;}
-function getRestDayNotice(){var d=localDay();if(d===2)return"Today is Tuesday — next glute day is Wednesday!";if(d===4)return"Today is Thursday — next glute day is Friday!";if(d===6)return"Today is Saturday — rest day! Next glute day is Monday.";if(d===0)return"Today is Sunday — rest day! Next glute day is Monday.";return null;}
-function parseSets(setsStr){if(!setsStr)return 3;var m=setsStr.match(/^(\d+)/);return m?Math.min(parseInt(m[1]),6):3;}
+function getInitialTab(){var d=localDay();if(d===1)return 0;if(d===3)return 1;if(d===5)return 2;return 0;}
+function getRestDayNotice(){var d=localDay();if(d===2)return"Today is Tuesday — next glute day is Wednesday!";if(d===4)return"Today is Thursday — next glute day is Friday!";if(d===6||d===0)return"Rest day! Next glute day is Monday.";return null;}
+function parseSets(s){if(!s)return 3;var m=s.match(/^(\d+)/);return m?Math.min(parseInt(m[1]),6):3;}
+
+function calcCurrentWeek(){
+  var start=new Date(PROGRAM_START+'T00:00:00'),now=new Date();
+  var diff=Math.floor((now-start)/(1000*60*60*24));
+  return Math.min(Math.max(Math.floor(diff/7)+1,1),12);
+}
+function weekToPhaseLabel(w){if(w<=4)return"Weeks 1–4 · Foundation";if(w<=8)return"Weeks 5–8 · Build";return"Weeks 9–12 · Peak";}
+function weekToColor(w){if(w<=4)return'#7c3aed';if(w<=8)return'#059669';return'#db2777';}
 
 function safeGet(k){try{return localStorage.getItem(k);}catch(e){try{return sessionStorage.getItem(k);}catch(e2){return null;}}}
 function safeSet(k,v){try{localStorage.setItem(k,v);}catch(e){try{sessionStorage.setItem(k,v);}catch(e2){}}}
 function safeRemove(k){try{localStorage.removeItem(k);}catch(e){try{sessionStorage.removeItem(k);}catch(e2){}}}
-function safeKeys(prefix){
-  var keys=[];
-  try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith(prefix))keys.push(k);}}
-  catch(e){try{for(var i=0;i<sessionStorage.length;i++){var k=sessionStorage.key(i);if(k&&k.startsWith(prefix))keys.push(k);}}catch(e2){}}
-  return keys;
-}
+function safeKeys(p){var ks=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith(p))ks.push(k);}}catch(e){try{for(var i=0;i<sessionStorage.length;i++){var k=sessionStorage.key(i);if(k&&k.startsWith(p))ks.push(k);}}catch(e2){}}return ks;}
 
-var DAYS = [
-  { label:"MON", title:"🔥 Power Day", sub:"Heavy lifts · Rest 2-3 min", homesub:"Bands & bodyweight · Rest 2-3 min", exercises:[
-    { name:"Barbell Hip Thrust", area:"Glutes", emoji:"🏋️", sets:"4 × 10-12", weights:["45 lb bar","65-75 lb","85-95 lb"], notes:"Upper back on bench, bar on hips. Drive through heels, squeeze hard at top.", tip:"Hold 1 full second at the top — that squeeze is where growth happens", home:"Banded glute bridge — heavy band above knees, drive up and squeeze hard. Add dumbbell on hips if you have one.", homesets:"4 × 10-12", howto:["Upper back rests on bench, padded bar across hips","Feet flat, hip-width, knees bent 90°","Drive through heels and thrust hips up","Squeeze glutes HARD at top — hold 1 second","Lower slowly — 3 counts down","Keep chin tucked, do not hyperextend lower back"] },
-    { name:"Romanian Deadlift", area:"Hamstrings & Glutes", emoji:"🏋️", sets:"3 × 10-12", weights:["20-25 lb dumbbells","30-35 lb","40-50 lb"], notes:"Hinge at hips, push butt back. Feel the hamstring stretch at the bottom.", tip:"Think: close the car door with your butt on the way back up", home:"Banded RDL — anchor band under feet, hold both ends, hinge forward same way.", homesets:"3 × 10-12", howto:["Stand holding dumbbells, slight knee bend","Hinge at HIPS — push butt backward not downward","Lower along legs until strong hamstring stretch","Keep back flat the entire time","Squeeze glutes and drive hips forward to stand","The stretch at the bottom is where the magic happens"] },
-    { name:"Sumo Goblet Squat", area:"Inner Thighs & Glutes", emoji:"🦵", sets:"3 × 12-15", weights:["15-20 lb dumbbell","25-30 lb","35-40 lb"], notes:"Wide stance, toes out 45°. Sit DOWN between your legs — not back.", tip:"Press knees out with elbows at the bottom for a deeper stretch", home:"Bodyweight sumo squat — same wide stance, arms at chest. Add band above knees for resistance.", homesets:"3 × 15-20", howto:["Feet wider than shoulder-width, toes out 45°","Hold dumbbell vertically at chest","Sit DOWN between legs — different from regular squat","Chest tall, knees tracking over toes","Elbows press knees wider at the bottom","Drive through heels to stand, squeeze glutes at top"] },
-    { name:"Standing Kickback", area:"Glutes — Isolation", emoji:"🦶", sets:"3 × 15 each", weights:["15-20 lb ankle weight","20-25 lb ankle weight","25-30 lb ankle weight"], notes:"Stand tall, slight forward lean. Kick straight back — squeeze hard at the top and hold.", tip:"Slow controlled reps beat fast sloppy ones every time — pause at the top", home:"Banded kickback — anchor band low, loop around ankle, kick straight back.", homesets:"3 × 15 each", howto:["Stand facing a wall or bench for balance support","Ankle weight on working leg, slight forward lean","Core tight, standing leg slightly bent","Kick working leg STRAIGHT back — not to the side","Squeeze glute hard at top, hold 1 second","Lower slowly with control — resist gravity on the way down"] },
-    { name:"Seated Abduction Machine", area:"Glute Medius", emoji:"↔️", sets:"3 × 20", weights:["Light-moderate","Moderate","Moderate-heavy"], notes:"Pads on outside of knees. Push OUT and hold 2 seconds.", tip:"Lean slightly forward to shift work to glute medius instead of TFL", home:"Banded seated abduction — sit on chair, band above knees, push knees OUT and hold 2 seconds.", homesets:"3 × 20", howto:["Sit upright, pads against outside of knees","Feet flat, core engaged","Push legs OUT — slow and controlled","Hold open 2 full seconds","Squeeze outer glutes throughout","Return slowly — do not let weight crash back"] }
-  ]},
-  { label:"WED", title:"🔥 Burnout Day", sub:"High reps · Rest 60 sec", homesub:"Bands & bodyweight · Rest 60 sec", exercises:[
-    { name:"Goblet Squat", area:"Quads & Glutes — High Rep", emoji:"🦵", sets:"4 × 15", weights:["15 lb dumbbell","20 lb","25 lb"], notes:"Higher reps today. Feel the burn — this is your metabolic finisher day.", tip:"On the last 3 reps, pause 2 seconds at the bottom", home:"Bodyweight goblet squat — clasp hands at chest. Add band above knees to increase difficulty.", homesets:"4 × 15", howto:["Hold dumbbell at chest, feet shoulder-width","Squat as deep as comfortable","Push knees out as you descend","Hold briefly at bottom — feel glutes loaded","Drive through full foot to stand","Squeeze glutes at top before next rep"] },
-    { name:"Side-Lying Clamshell", area:"Glute Medius — Outer Round", emoji:"↔️", sets:"3 × 20 each", weights:["Light band","Medium band","Heavy band"], notes:"Band above knees, feet together. Open top knee up — do not let pelvis rock.", tip:"Targets the side roundness — do not skip it just because it feels easy", home:"This IS the at-home version — band above knees, side lying.", homesets:"3 × 20 each", howto:["Lie on side, band above knees","Hips stacked, knees bent 45°, feet together","Keep feet together, rotate top knee upward","Do not let pelvis roll backward","Hold open 2 seconds, squeeze outer glute","Lower slowly, complete reps then flip"] },
-    { name:"Donkey Kick", area:"Glutes — Isolation", emoji:"🦶", sets:"3 × 15 each", weights:["Bodyweight","5 lb ankle weight","8-10 lb ankle weight"], notes:"On all fours. Kick UP toward ceiling — sole faces up. Squeeze and hold.", tip:"Slow is more effective than fast — squeeze, do not rush", home:"Loop band around ankle, anchor under hands for resistance.", homesets:"3 × 15 each", howto:["On all fours, wrists under shoulders","Keep knee bent 90° throughout","Kick leg UP toward ceiling — sole faces up","Squeeze glute HARD, hold 1-2 seconds","Keep hips square — do not rotate","Lower slowly, no resting between reps"] },
-    { name:"Sumo Deadlift", area:"Glutes, Hamstrings & Inner Thighs", emoji:"🏋️", sets:"4 × 12", weights:["45-55 lb","65-75 lb","85-100 lb"], notes:"Wide stance, toes out. Push the floor apart as you drive up.", tip:"Squeeze inner thighs toward each other as you lock out at the top", home:"Banded sumo deadlift — anchor band under feet wide, hold both ends.", homesets:"4 × 12", howto:["Feet wide, toes pointed out 45°","Bar over mid-foot, grip inside legs","Hinge down, chest up, back flat","Push floor APART with feet as you drive up","Squeeze glutes hard at lockout","Lower with control — do not drop the weight"] },
-    { name:"Single-Leg Glute Bridge", area:"Glutes — Finisher", emoji:"🏋️", sets:"3 × 12 each", weights:["Bodyweight","BW + 10 lb plate","BW + 15-20 lb"], notes:"One foot flat, other leg extended. Drive through planted heel.", tip:"This is the finisher — go until you feel the full burn in each glute", home:"Same movement — bodyweight is plenty. Add a dumbbell on your hip when ready.", homesets:"3 × 12 each", howto:["Lie on back, one foot flat, other leg extended up","Keep extended leg at about 45°","Drive through planted heel to lift hips","Squeeze working glute as hard as possible","Keep hips level — do not let unsupported side drop","Lower slowly, repeat, then switch legs"] }
-  ]},
-  { label:"FRI", title:"🍑 Full Glute Day", sub:"All angles · Rest 90 sec", homesub:"Bands & bodyweight · Rest 90 sec", exercises:[
-    { name:"Barbell Hip Thrust", area:"Glutes — Weekly Closer", emoji:"🏋️", sets:"5 × 10", weights:["55-65 lb","75-85 lb","95-115 lb"], notes:"Heavier than Monday. You have built up all week — finish strong.", tip:"Week over week, try to add just 5 lbs — that is progressive overload working", home:"Banded glute bridge with heaviest band — 5 sets of 10, full squeeze and hold.", homesets:"5 × 10", howto:["Upper back on bench, padded bar across hips","Feet flat, hip-width, knees bent 90°","Drive through heels and thrust hips up","Squeeze glutes HARD at top — hold 1 second","Lower slowly — 3 counts down","You know this movement now — own it"] },
-    { name:"Leg Press — High & Wide Foot", area:"Glutes & Hamstrings", emoji:"🦵", sets:"4 × 15", weights:["90-110 lb","130-150 lb","160-190 lb"], notes:"Feet HIGH and WIDE on the platform. This targets glutes, not quads.", tip:"Lower until knees are at 90° — do not let your lower back lift off the seat", home:"Banded sumo squat — band above knees, wide stance, deep squat. 4 sets of 15 with 2-second hold.", homesets:"4 × 15", howto:["Set feet HIGH on the platform, wider than shoulder-width","Toes pointed slightly out","Lower sled slowly until knees reach 90°","Push through HEELS — not balls of feet","Squeeze glutes as legs extend — do not lock knees","Full controlled range of motion every rep"] },
-    { name:"Standing Kickback", area:"Glutes — Isolation", emoji:"🦶", sets:"4 × 15 each", weights:["20-25 lb ankle weight","25-30 lb ankle weight","30-35 lb ankle weight"], notes:"Slightly heavier than Monday. Squeeze, hold 2 full seconds, resist on the way back.", tip:"Friday is max squeeze day — hold 2 full seconds at the top", home:"Banded kickback — band anchored low, loop around ankle. Hold 2 full seconds at top.", homesets:"4 × 15 each", howto:["Stand facing a wall or bench for balance support","Ankle weight on working leg, slight forward lean","Core tight, standing leg slightly bent","Kick working leg STRAIGHT back — not to the side","Squeeze glute HARD — hold 2 full seconds","Lower slowly — resist gravity the whole way down"] },
-    { name:"Banded Lateral Walk", area:"Glute Medius — Shape", emoji:"🟣", sets:"3 × 20 steps each way", weights:["Light-medium band","Medium band","Medium-heavy band"], notes:"Band above knees, stay low in a slight squat. Never let feet fully meet.", tip:"Lower you stay, the harder your glutes work — do not rise up", home:"This IS the at-home version — band above knees, same movement.", homesets:"3 × 20 steps each way", howto:["Band just above knees, stand in slight squat","Take wide step to the side — maintain squat","Bring other foot in — but do not fully close gap","20 steps right, 20 back left = 1 set","Stay low the entire set","Hands on hips or out in front for balance"] },
-    { name:"Frog Pump", area:"Glutes — Finisher", emoji:"🐸", sets:"3 × 30", weights:["Bodyweight","BW + light plate","BW + 10-15 lb plate"], notes:"Lie on back, soles of feet together, knees open like a frog. Pump hips up.", tip:"These look easy — do 30 at the end of the week and tell me that again", home:"Same movement — bodyweight frog pumps are brutal. Perfect finisher at home.", homesets:"3 × 30", howto:["Lie on back, soles of feet pressed together","Let knees fall open wide — frog position","Drive hips UP squeezing glutes hard","Small range of motion — all about the squeeze","Lower slightly and pump right back up","30 controlled reps — feel the glutes on fire"] }
-  ]},
-  { label:"WARM UP", title:"🌡️ Activation", sub:"Before EVERY session · 8-10 min", homesub:"Before every home session · 8-10 min", exercises:[
-    { name:"Banded Lateral Walk", area:"Glute Medius Activation", emoji:"🟣", sets:"2 × 15 steps each way", weights:["Light band","Light-medium","Medium"], notes:"Band above knees, slight squat position. Keep tension on band always.", tip:"Do not let feet come together — constant tension = constant activation", home:"This IS the at-home version — band above knees.", homesets:"2 × 15 steps each way", howto:["Band just above knees","Stand in slight squat position — stay low","Step sideways, never let feet fully meet","15 steps right, 15 back left = 1 set","Torso upright, core engaged","Directly activates glute medius before your workout"] },
-    { name:"Bodyweight Glute Bridge", area:"Glute Max Activation", emoji:"🦵", sets:"2 × 15", weights:["Bodyweight","Bodyweight","BW + light band"], notes:"Focus on FEELING your glutes work. This is activation — not a workout.", tip:"Touch your glutes before the set — neural cue increases activation", home:"This IS the at-home version — bodyweight on the floor.", homesets:"2 × 15", howto:["Lie on back, feet flat, knees bent","Touch your glutes to create a neural cue","Drive hips up and SQUEEZE hard at top","Hold 2 full seconds — feel the contraction","Lower slowly and repeat","If you feel hamstrings more than glutes, bring feet slightly closer"] },
-    { name:"Banded Clamshell", area:"Glute Medius Activation", emoji:"↔️", sets:"2 × 15 each", weights:["Light band","Light band","Light-medium"], notes:"Side-lying, feet together. Open knee — pelvis stays completely still.", tip:"If your hip rocks, the band is too heavy", home:"This IS the at-home version — band above knees, side lying.", homesets:"2 × 15 each", howto:["Lie on side, band above knees","Hips stacked, knees bent 45°, feet together","Keep pelvis absolutely still","Rotate top knee upward — feet stay together","Hold open 1-2 seconds at top","Lower slowly, complete all reps, switch sides"] },
-    { name:"Hip Circle", area:"Hip Joint Warm-Up", emoji:"🦶", sets:"10 each direction, each leg", weights:["Bodyweight","Bodyweight","Bodyweight"], notes:"On all fours, draw big circles with one knee. Slow and full range.", tip:"The bigger and slower, the better — lubricating the joint", home:"This IS the at-home version — zero equipment needed.", homesets:"10 each direction, each leg", howto:["On all fours, wrists under shoulders","Bring one knee up and out to side","Draw large slow circle — forward, up, back, down","Make circle as big as comfortable","10 forward, 10 backward, switch legs","Especially important for joint health post-bypass"] }
-  ]}
-];
-
-var TIPS = [
-  { emoji:"🍑", title:"Progressive Overload", body:"Every 1-2 weeks, add 5 lbs or a heavier band, or 2 reps. Glutes need to be challenged to grow." },
-  { emoji:"💊", title:"Post-Bypass Protein", body:"60-80g daily minimum. Prioritize protein at every meal. Muscles cannot grow without it — non-negotiable." },
-  { emoji:"🧠", title:"Mind-Muscle Connection", body:"Before every set, touch your glutes and consciously squeeze them. This neural cue increases activation by 20-30%." },
-  { emoji:"💤", title:"Sleep = Growth", body:"Glutes grow while you sleep. 7-8 hours is part of your program — not optional." },
-  { emoji:"🩺", title:"Post-Bypass Note", body:"Start lighter than you think. Joints need 4-6 weeks to adapt even when movement feels easy." },
-  { emoji:"⏱", title:"12-Week Timeline", body:"Weeks 1-4: Learn movements. Weeks 5-8: Add weight. Weeks 9-12: Visible shape change. Commit to the full program." }
-];
-
-// ── CALENDAR PICKER ───────────────────────────────────────────
-function CalendarPicker(props) {
-  var activeDate=props.activeDate, onSelect=props.onSelect;
-  var todayISO=todayStr();
-  var initY=parseInt(activeDate.slice(0,4)), initM=parseInt(activeDate.slice(5,7))-1;
-  var cy=useState(initY),calYear=cy[0],setCalYear=cy[1];
-  var cm=useState(initM),calMonth=cm[0],setCalMonth=cm[1];
-  function prevMonth(){if(calMonth===0){setCalMonth(11);setCalYear(calYear-1);}else setCalMonth(calMonth-1);}
-  function nextMonth(){var nm=calMonth+1,ny=calYear;if(nm>11){nm=0;ny++;}var fp=ny+'-'+String(nm+1).padStart(2,'0')+'-01';if(fp>todayISO)return;setCalMonth(nm);setCalYear(ny);}
+function CalendarPicker(props){
+  var t=todayStr(),iY=parseInt(props.activeDate.slice(0,4)),iM=parseInt(props.activeDate.slice(5,7))-1;
+  var cy=useState(iY),calY=cy[0],setCalY=cy[1];
+  var cm=useState(iM),calM=cm[0],setCalM=cm[1];
+  function prev(){if(calM===0){setCalM(11);setCalY(calY-1);}else setCalM(calM-1);}
+  function next(){var nm=calM+1,ny=calY;if(nm>11){nm=0;ny++;}if(ny+'-'+String(nm+1).padStart(2,'0')+'-01'>t)return;setCalM(nm);setCalY(ny);}
   var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var firstDay=new Date(calYear,calMonth,1).getDay();
-  var daysInMonth=new Date(calYear,calMonth+1,0).getDate();
-  var cells=[];
-  for(var i=0;i<firstDay;i++) cells.push(null);
-  for(var d=1;d<=daysInMonth;d++) cells.push(d);
+  var fd=new Date(calY,calM,1).getDay(),dim=new Date(calY,calM+1,0).getDate(),cells=[];
+  for(var i=0;i<fd;i++)cells.push(null);
+  for(var d=1;d<=dim;d++)cells.push(d);
   return React.createElement('div',{className:'cal-picker'},
     React.createElement('div',{className:'cal-picker-header'},
-      React.createElement('button',{className:'cal-nav',onClick:prevMonth},'◀'),
-      React.createElement('span',{className:'cal-picker-title'},months[calMonth]+' '+calYear),
-      React.createElement('button',{className:'cal-nav',onClick:nextMonth},'▶')
+      React.createElement('button',{className:'cal-nav',onClick:prev},'◀'),
+      React.createElement('span',{className:'cal-picker-title'},months[calM]+' '+calY),
+      React.createElement('button',{className:'cal-nav',onClick:next},'▶')
     ),
     React.createElement('div',{className:'cal-dow'},['Su','Mo','Tu','We','Th','Fr','Sa'].map(function(d){return React.createElement('span',{key:d},d);})),
-    React.createElement('div',{className:'cal-grid'},
-      cells.map(function(d,i){
-        if(!d) return React.createElement('div',{key:'e'+i,className:'cal-cell empty'});
-        var iso=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-        var isFuture=iso>todayISO, isToday=iso===todayISO, isSel=iso===activeDate;
-        var cls='cal-cell'+(isToday?' today':'')+(isSel?' selected':'')+(isFuture?' future':'');
-        return React.createElement('div',{key:iso,className:cls,onClick:function(){if(!isFuture)onSelect(iso);}},d);
-      })
-    )
+    React.createElement('div',{className:'cal-grid'},cells.map(function(d,i){
+      if(!d)return React.createElement('div',{key:'e'+i,className:'cal-cell empty'});
+      var iso=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      var cls='cal-cell'+(iso===t?' today':'')+(iso===props.activeDate?' selected':'')+(iso>t?' future':'');
+      return React.createElement('div',{key:iso,className:cls,onClick:function(){if(iso<=t)props.onSelect(iso);}},d);
+    }))
   );
 }
 
-// ── PER-SET LOG FORM ──────────────────────────────────────────
-function LogForm(props) {
-  var numSets=parseSets(props.isHome?props.homesets:props.sets);
-  function makeRow(){return{reps:'',weight:''};}
-  var initRows=[];
-  for(var i=0;i<numSets;i++) initRows.push(makeRow());
-  var rw=useState(initRows),rows=rw[0],setRows=rw[1];
+function LogForm(props){
+  var nr=parseSets(props.sets);
+  function mk(){return{reps:'',weight:''};}
+  var initR=[];for(var i=0;i<nr;i++)initR.push(mk());
+  var rw=useState(initR),rows=rw[0],setRows=rw[1];
   var sv=useState(false),saving=sv[0],setSaving=sv[1];
-
-  function updateRow(idx,field,val){setRows(function(prev){var next=prev.map(function(r){return Object.assign({},r);});next[idx][field]=val;return next;});}
-  function addRow(){setRows(function(prev){return prev.concat(makeRow());});}
-  function removeRow(idx){setRows(function(prev){if(prev.length<=1)return prev;return prev.filter(function(_,i){return i!==idx;});});}
-
+  function upd(idx,f,v){setRows(function(p){var n=p.map(function(r){return Object.assign({},r);});n[idx][f]=v;return n;});}
   function submit(){
     var filled=rows.filter(function(r){return r.reps||r.weight;});
-    if(!filled.length) return;
+    if(!filled.length)return;
     setSaving(true);
-    var logDate=props.logDate||todayStr();
-    var key='bbb_'+logDate+'_'+props.exName.replace(/\s+/g,'-');
-    var existing=JSON.parse(safeGet(key)||'[]');
-    var timestamp=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    filled.forEach(function(r,i){existing.push({set:i+1,reps:r.reps,weight:r.weight,time:timestamp});});
-    safeSet(key,JSON.stringify(existing));
-    var reset=[];for(var i=0;i<numSets;i++)reset.push(makeRow());
+    var key='bbb_'+(props.logDate||todayStr())+'_'+props.exName.replace(/\s+/g,'-');
+    var ex=JSON.parse(safeGet(key)||'[]'),ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    filled.forEach(function(r,i){ex.push({set:i+1,reps:r.reps,weight:r.weight,time:ts});});
+    safeSet(key,JSON.stringify(ex));
+    var reset=[];for(var i=0;i<nr;i++)reset.push(mk());
     setRows(reset);setSaving(false);props.onSaved();
   }
-
   return React.createElement('div',{style:{background:'#0a0010',border:'1px solid #3b0764',borderRadius:10,padding:12,marginTop:8}},
     React.createElement('div',{style:{fontSize:11,color:'#c084fc',fontWeight:700,marginBottom:10}},'📝 Log This Exercise'),
     React.createElement('div',{style:{display:'grid',gridTemplateColumns:'28px 1fr 1fr 24px',gap:5,marginBottom:4}},
@@ -177,137 +408,96 @@ function LogForm(props) {
       React.createElement('div',{style:{fontSize:10,color:'#9ca3af',fontWeight:700}},'WEIGHT'),
       React.createElement('div',null)
     ),
-    rows.map(function(row,i){
-      var ci=i;
-      return React.createElement('div',{key:i,className:'set-row'},
-        React.createElement('div',{className:'set-label'},'S'+(i+1)),
-        React.createElement('input',{type:'number',placeholder:'12',value:row.reps,onChange:function(e){updateRow(ci,'reps',e.target.value);}}),
-        React.createElement('input',{type:'text',placeholder:'95 lb',value:row.weight,onChange:function(e){updateRow(ci,'weight',e.target.value);}}),
-        React.createElement('button',{className:'remove-set-btn',onClick:function(){removeRow(ci);}},'×')
-      );
-    }),
-    React.createElement('button',{className:'add-set-btn',onClick:addRow},'+ Add Set'),
-    React.createElement('button',{className:'log-btn',onClick:submit,style:{width:'100%',marginTop:10,opacity:saving?0.6:1}},saving?'Saving...':'💾 Save All Sets')
+    rows.map(function(row,i){var ci=i;return React.createElement('div',{key:i,className:'set-row'},
+      React.createElement('div',{className:'set-label'},'S'+(i+1)),
+      React.createElement('input',{type:'number',placeholder:'12',value:row.reps,onChange:function(e){upd(ci,'reps',e.target.value);}}),
+      React.createElement('input',{type:'text',placeholder:'95 lb',value:row.weight,onChange:function(e){upd(ci,'weight',e.target.value);}}),
+      React.createElement('button',{className:'remove-set-btn',onClick:function(){setRows(function(p){return p.length>1?p.filter(function(_,j){return j!==ci;}):p;});}},'×')
+    );}),
+    React.createElement('button',{className:'add-set-btn',onClick:function(){setRows(function(p){return p.concat(mk());});}},'+ Add Set'),
+    React.createElement('button',{className:'log-btn',onClick:submit,style:{width:'100%',marginTop:10}},saving?'Saving...':'💾 Save All Sets')
   );
 }
 
-// ── HISTORY VIEW ─────────────────────────────────────────────
 function HistoryView(){
-  var d=useState(null),setData=d[1];d=d[0];
+  var ds=useState(null),setData=ds[1];ds=ds[0];
   var rf=useState(0),setRf=rf[1];rf=rf[0];
-  var op=useState({}),openDates=op[0],setOpenDates=op[1];
-
+  var op=useState({}),openD=op[0],setOpenD=op[1];
   useEffect(function(){
-    var keys=safeKeys('bbb_');
-    var byDate={};
-    keys.forEach(function(k){
-      var parts=k.replace('bbb_','').split('_');
-      var date=parts[0],ex=parts.slice(1).join(' ').replace(/-/g,' ');
-      var entries=JSON.parse(safeGet(k)||'[]');
-      if(!byDate[date])byDate[date]={};
-      byDate[date][ex]=entries;
-    });
+    var keys=safeKeys('bbb_'),byDate={};
+    keys.forEach(function(k){var pts=k.replace('bbb_','').split('_'),date=pts[0],ex=pts.slice(1).join(' ').replace(/-/g,' ');var entries=JSON.parse(safeGet(k)||'[]');if(!byDate[date])byDate[date]={};byDate[date][ex]=entries;});
     setData(byDate);
   },[rf]);
-
-  function toggleDate(date){setOpenDates(function(prev){var n=Object.assign({},prev);n[date]=!prev[date];return n;});}
-
-  function delEntry(key,idx){
-    var entries=JSON.parse(safeGet(key)||'[]');
-    entries.splice(idx,1);
-    if(entries.length){safeSet(key,JSON.stringify(entries));}else{safeRemove(key);}
-    setRf(function(x){return x+1;});
-  }
-
-  if(!d) return React.createElement('div',{style:{textAlign:'center',color:'#9ca3af',fontSize:13,padding:'20px 0'}},'Loading...');
-  if(!Object.keys(d).length) return React.createElement('div',{style:{textAlign:'center',color:'#6b7280',fontSize:13,padding:'30px 0'}},'No logs yet. Start logging your exercises to see history here!');
-
-  var dates=Object.keys(d).sort(function(a,b){return b.localeCompare(a);});
-  return React.createElement('div',null,
-    dates.map(function(date){
-      var exs=d[date];
-      var friendly=friendlyDate(date);
-      var isOpen=!!openDates[date];
-      var totalSets=Object.values(exs).reduce(function(sum,entries){return sum+entries.length;},0);
-      return React.createElement('div',{key:date,style:{background:'#1a0030',border:'1px solid #3b0764',borderRadius:12,marginBottom:10,overflow:'hidden'}},
-        React.createElement('div',{className:'hist-day-header',onClick:function(){toggleDate(date);}},
-          React.createElement('div',null,
-            React.createElement('div',{className:'hist-day-title'},'📅 '+friendly),
-            React.createElement('div',{style:{fontSize:10,color:'#6b7280',marginTop:2}},Object.keys(exs).length+' exercise'+(Object.keys(exs).length!==1?'s':'')+' · '+totalSets+' set'+(totalSets!==1?'s':''))
-          ),
-          React.createElement('div',{className:'hist-day-toggle'},isOpen?'▲ Hide':'▼ Show')
+  function del(key,idx){var e=JSON.parse(safeGet(key)||'[]');e.splice(idx,1);if(e.length){safeSet(key,JSON.stringify(e));}else{safeRemove(key);}setRf(function(x){return x+1;});}
+  if(!ds)return React.createElement('div',{style:{textAlign:'center',color:'#9ca3af',fontSize:13,padding:'20px 0'}},'Loading...');
+  if(!Object.keys(ds).length)return React.createElement('div',{style:{textAlign:'center',color:'#6b7280',fontSize:13,padding:'30px 0'}},'No logs yet. Start logging to see history here!');
+  return React.createElement('div',null,Object.keys(ds).sort(function(a,b){return b.localeCompare(a);}).map(function(date){
+    var exs=ds[date],isOpen=!!openD[date],total=Object.values(exs).reduce(function(s,e){return s+e.length;},0);
+    return React.createElement('div',{key:date,style:{background:'#1a0030',border:'1px solid #3b0764',borderRadius:12,marginBottom:10,overflow:'hidden'}},
+      React.createElement('div',{className:'hist-day-header',onClick:function(){setOpenD(function(p){var n=Object.assign({},p);n[date]=!p[date];return n;});}},
+        React.createElement('div',null,
+          React.createElement('div',{className:'hist-day-title'},'📅 '+friendlyDate(date)),
+          React.createElement('div',{style:{fontSize:10,color:'#6b7280',marginTop:2}},Object.keys(exs).length+' exercises · '+total+' sets')
         ),
-        isOpen&&React.createElement('div',{style:{padding:'10px 14px'}},
-          Object.keys(exs).map(function(ex){
-            var entries=exs[ex];
-            var logKey='bbb_'+date+'_'+ex.replace(/\s+/g,'-');
-            return React.createElement('div',{key:ex,className:'hist-block'},
-              React.createElement('div',{className:'hist-date'},ex),
-              entries.map(function(entry,idx){
-                var ci=idx,ck=logKey;
-                var label=entry.set?'Set '+entry.set:'';
-                var detail=(entry.reps?entry.reps+' reps':'')+(entry.weight?' @ '+entry.weight:'');
-                if(!entry.set&&(entry.sets||entry.note)){
-                  label=entry.sets?entry.sets+' sets':'';
-                  detail=(entry.reps?'× '+entry.reps+' reps':'')+(entry.weight?' @ '+entry.weight:'')+(entry.note?' — '+entry.note:'');
-                }
-                return React.createElement('div',{key:idx,className:'hist-row'},
-                  React.createElement('span',{style:{color:'#a78bfa',fontWeight:700,marginRight:6}},label),
-                  React.createElement('span',null,detail),
-                  React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
-                    React.createElement('span',{style:{color:'#6b7280'}},entry.time||''),
-                    React.createElement('button',{className:'del',onClick:function(){delEntry(ck,ci);}},'×')
-                  )
-                );
-              })
-            );
-          })
-        )
-      );
-    })
-  );
+        React.createElement('div',{className:'hist-day-toggle'},isOpen?'▲ Hide':'▼ Show')
+      ),
+      isOpen&&React.createElement('div',{style:{padding:'10px 14px'}},
+        Object.keys(exs).map(function(ex){
+          var entries=exs[ex],lk='bbb_'+date+'_'+ex.replace(/\s+/g,'-');
+          return React.createElement('div',{key:ex,className:'hist-block'},
+            React.createElement('div',{style:{color:'#c084fc',fontWeight:700,fontSize:11,marginBottom:4}},ex),
+            entries.map(function(e,idx){var ci=idx,ck=lk;
+              return React.createElement('div',{key:idx,className:'hist-row'},
+                React.createElement('span',{style:{color:'#a78bfa',fontWeight:700,marginRight:6}},e.set?'Set '+e.set:''),
+                React.createElement('span',null,(e.reps?e.reps+' reps':'')+(e.weight?' @ '+e.weight:'')),
+                React.createElement('span',{style:{display:'flex',alignItems:'center',gap:6}},
+                  React.createElement('span',{style:{color:'#6b7280'}},e.time||''),
+                  React.createElement('button',{className:'del',onClick:function(){del(ck,ci);}},'×')
+                )
+              );
+            })
+          );
+        })
+      )
+    );
+  }));
 }
 
-// ── EXERCISE CARD ─────────────────────────────────────────────
-function Card(props) {
-  var ex=props.ex,phase=props.phase,isDone=props.isDone,isOpen=props.isOpen;
-  var isHome=props.isHome,showLog=props.showLog,logDate=props.logDate;
+function Card(props){
+  var ex=props.ex,isDone=props.isDone,isOpen=props.isOpen,showLog=props.showLog;
   return React.createElement('div',{style:{background:isDone?'#0f1f0f':'#1a0030',border:'2px solid '+(isDone?'#166534':'#3b0764'),borderRadius:12,padding:'14px 16px',marginBottom:12}},
     React.createElement('div',{onClick:props.onCheck,style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6,cursor:'pointer'}},
       React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8}},
         React.createElement('span',{style:{fontSize:20}},ex.emoji),
         React.createElement('div',null,
           React.createElement('div',{style:{fontWeight:700,fontSize:14,color:isDone?'#4ade80':'white'}},(isDone?'✅ ':'')+ex.name),
-          React.createElement('div',{style:{fontSize:11,color:isHome?'#4ade80':'#7c3aed',fontWeight:600,marginTop:2}},ex.area)
+          React.createElement('div',{style:{fontSize:11,color:'#7c3aed',fontWeight:600,marginTop:2}},ex.area)
         )
       ),
-      React.createElement('div',{style:{fontSize:11,color:'#6b7280',textAlign:'right'}},
-        isHome?ex.homesets:ex.sets,
-        ex.weights&&!isHome?React.createElement('span',null,React.createElement('br'),React.createElement('span',{style:{color:'#c084fc',fontWeight:700}},ex.weights[phase])):null
-      )
+      React.createElement('div',{style:{fontSize:11,color:'#c084fc',textAlign:'right',fontWeight:700}},ex.sets,React.createElement('br'),ex.weights)
     ),
-    React.createElement('div',{style:{fontSize:12,color:'#9ca3af',lineHeight:1.5,marginBottom:8}},isHome?ex.home:ex.notes),
+    React.createElement('div',{style:{fontSize:12,color:'#9ca3af',lineHeight:1.5,marginBottom:8}},ex.notes),
     React.createElement('div',{style:{background:'#0a0010',borderRadius:8,padding:'6px 10px',fontSize:11,color:'#c084fc',fontStyle:'italic',marginBottom:10}},'💡 '+ex.tip),
     React.createElement('div',{style:{display:'flex',gap:8,marginBottom:8}},
       React.createElement('button',{onClick:props.onExpand,style:{flex:1,background:isOpen?'#3b0764':'#0a0010',border:'1px solid #3b0764',borderRadius:8,padding:'6px 14px',fontSize:12,color:'#a78bfa',fontWeight:700,cursor:'pointer'}},isOpen?'▲ Hide How To':'▼ How To'),
       React.createElement('button',{onClick:props.onToggleLog,style:{flex:1,background:showLog?'#7c3aed':'#0a0010',border:'1px solid #7c3aed',borderRadius:8,padding:'6px 14px',fontSize:12,color:showLog?'white':'#c084fc',fontWeight:700,cursor:'pointer'}},showLog?'▲ Hide Log':'📝 Log')
     ),
-    isOpen&&React.createElement('div',{style:{marginTop:0,background:'#0a0010',borderRadius:8,padding:'12px 14px',marginBottom:8}},
-      ex.howto.map(function(step,s){return React.createElement('div',{key:s,style:{display:'flex',gap:10,marginBottom:8}},React.createElement('span',{style:{color:'#7c3aed',fontWeight:800,fontSize:13,minWidth:20}},(s+1)+'.'),React.createElement('span',{style:{color:'#e2e8f0',fontSize:12,lineHeight:1.5}},step));})
+    isOpen&&React.createElement('div',{style:{background:'#0a0010',borderRadius:8,padding:'12px 14px',marginBottom:8}},
+      ex.howto.map(function(step,s){return React.createElement('div',{key:s,style:{display:'flex',gap:10,marginBottom:8}},
+        React.createElement('span',{style:{color:'#7c3aed',fontWeight:800,fontSize:13,minWidth:20}},(s+1)+'.'),
+        React.createElement('span',{style:{color:'#e2e8f0',fontSize:12,lineHeight:1.5}},step)
+      );})
     ),
-    showLog&&React.createElement(LogForm,{
-      exName:ex.name,logDate:logDate,
-      sets:ex.sets,homesets:ex.homesets,isHome:isHome,
-      onSaved:function(){props.onLogSaved&&props.onLogSaved();}
-    })
+    showLog&&React.createElement(LogForm,{exName:ex.name,logDate:props.logDate,sets:ex.sets,onSaved:props.onLogSaved})
   );
 }
 
-// ── MAIN APP ──────────────────────────────────────────────────
-function App() {
+function App(){
+  var curWeek=calcCurrentWeek();
   var t=useState(getInitialTab),tab=t[0],setTab=t[1];
   var m=useState('gym'),mode=m[0],setMode=m[1];
-  var p=useState(0),phase=p[0],setPhase=p[1];
+  var wk=useState(curWeek),week=wk[0],setWeek=wk[1];
+  var ov=useState(false),overridden=ov[0],setOverridden=ov[1];
   var c=useState({}),checked=c[0],setChecked=c[1];
   var e=useState({}),expanded=e[0],setExpanded=e[1];
   var lg=useState({}),logOpen=lg[0],setLogOpen=lg[1];
@@ -315,20 +505,22 @@ function App() {
   var hr=useState(0),histRefresh=hr[0],setHistRefresh=hr[1];
   var ld=useState(todayStr()),logDate=ld[0],setLogDate=ld[1];
   var sc=useState(false),showCal=sc[0],setShowCal=sc[1];
+  var wp=useState(false),showWeekPicker=wp[0],setShowWeekPicker=wp[1];
 
-  var isLog=mainTab==='log';
-  var isTips=!isLog&&tab===DAYS.length;
+  var isLog=mainTab==='log',isTips=!isLog&&tab===3,isWarmup=!isLog&&!isTips&&tab===4;
   var isHome=mode==='home';
-  var day=(!isTips&&!isLog)?DAYS[tab]:null;
-  var exs=day?day.exercises:[];
+  var dayData=WEEKS[week]&&!isTips&&!isWarmup?WEEKS[week][tab]:null;
+  var exs=isWarmup?WARMUP:(dayData?(isHome?dayData.home:dayData.gym):[]);
   var isToday=logDate===todayStr();
-  var done=exs.filter(function(_,i){return!!checked[mode+'-'+tab+'-'+phase+'-'+i];}).length;
-  var pct=exs.length>0?(done/exs.length)*100:0;
-  var restNotice=getRestDayNotice();
+  var done=exs.filter(function(_,i){return!!checked[mode+'-'+tab+'-'+week+'-'+i];}).length;
+  var pct=exs.length?(done/exs.length)*100:0;
+  var phaseColor=weekToColor(week);
 
-  function ck(key){setChecked(function(prev){var n=Object.assign({},prev);n[key]=!prev[key];return n;});}
-  function ek(key){setExpanded(function(prev){var n=Object.assign({},prev);n[key]=!prev[key];return n;});}
-  function lk(key){setLogOpen(function(prev){var n=Object.assign({},prev);n[key]=!prev[key];return n;});}
+  function ck(k){setChecked(function(p){var n=Object.assign({},p);n[k]=!p[k];return n;});}
+  function ek(k){setExpanded(function(p){var n=Object.assign({},p);n[k]=!p[k];return n;});}
+  function lk(k){setLogOpen(function(p){var n=Object.assign({},p);n[k]=!p[k];return n;});}
+
+  var DAY_TABS=['MON','WED','FRI','TIPS','WARM UP'];
 
   return React.createElement('div',{style:{fontFamily:'system-ui,sans-serif',maxWidth:460,margin:'0 auto',padding:16,backgroundColor:'#0a0010',minHeight:'100vh'}},
 
@@ -336,7 +528,12 @@ function App() {
 
     React.createElement('div',{style:{background:isHome?'linear-gradient(135deg,#064e3b,#059669)':'linear-gradient(135deg,#7c1a4a,#c44dff)',borderRadius:14,padding:'18px 20px',color:'white',marginBottom:16}},
       React.createElement('div',{style:{fontSize:22,fontWeight:800}},'🍑 Bubble Butt Builder'),
-      React.createElement('div',{style:{fontSize:13,opacity:0.9,marginTop:2}},isHome?'🏠 At Home Edition · Bands & Bodyweight':'Mon · Wed · Fri · 12-Week Glute Growth Program'),
+      React.createElement('div',{style:{fontSize:13,opacity:0.9,marginTop:2}},isHome?'🏠 At Home · Bands & Bodyweight':'Mon · Wed · Fri · 12-Week Glute Growth'),
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:8,flexWrap:'wrap'}},
+        React.createElement('span',{className:'phase-badge',style:{background:phaseColor}},weekToPhaseLabel(week)),
+        React.createElement('span',{className:'week-badge'},'Week '+week+' of 12'),
+        overridden&&React.createElement('span',{style:{fontSize:10,color:'rgba(255,255,255,0.6)'}},'(manual)')
+      ),
       !isTips&&!isLog&&React.createElement('div',null,
         React.createElement('div',{style:{marginTop:10,background:'rgba(255,255,255,0.25)',borderRadius:8,height:8}},
           React.createElement('div',{style:{background:'white',borderRadius:8,height:8,width:pct+'%',transition:'width 0.3s'}})
@@ -355,7 +552,7 @@ function App() {
         React.createElement('span',null,'📅 Logging for: ',React.createElement('strong',null,isToday?'Today ('+friendlyDate(logDate)+')':friendlyDate(logDate))),
         React.createElement('div',{style:{display:'flex',gap:6}},
           !isToday&&React.createElement('button',{className:'today-btn',onClick:function(){setLogDate(todayStr());setShowCal(false);}},'Today'),
-          React.createElement('button',{className:'today-btn',onClick:function(){setShowCal(function(v){return !v;});},style:{borderColor:'#c084fc',color:'#c084fc'}},showCal?'✕ Close':'📆 Change')
+          React.createElement('button',{className:'today-btn',onClick:function(){setShowCal(function(v){return !v;});},style:{borderColor:'#c084fc',color:'#c084fc'}},showCal?'✕':'📆 Change')
         )
       ),
       showCal&&React.createElement(CalendarPicker,{activeDate:logDate,onSelect:function(iso){setLogDate(iso);setShowCal(false);}})
@@ -364,36 +561,74 @@ function App() {
     isLog&&React.createElement(HistoryView,{key:histRefresh}),
 
     !isLog&&React.createElement('div',null,
-      restNotice&&isToday&&React.createElement('div',{style:{background:'#1a0030',border:'1px solid #7c3aed',borderRadius:10,padding:'10px 14px',fontSize:12,color:'#c084fc',fontWeight:600,marginBottom:12,textAlign:'center'}},'😴 '+restNotice),
+      getRestDayNotice()&&isToday&&React.createElement('div',{style:{background:'#1a0030',border:'1px solid #7c3aed',borderRadius:10,padding:'10px 14px',fontSize:12,color:'#c084fc',fontWeight:600,marginBottom:12,textAlign:'center'}},'😴 '+getRestDayNotice()),
+
       React.createElement('div',{style:{display:'flex',background:'#1a0030',borderRadius:10,padding:4,marginBottom:12,gap:4}},
         React.createElement('button',{onClick:function(){setMode('gym');setChecked({});},style:{flex:1,padding:'8px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,background:!isHome?'#7c3aed':'transparent',color:!isHome?'white':'#9ca3af'}},'🏋️ Gym'),
         React.createElement('button',{onClick:function(){setMode('home');setChecked({});},style:{flex:1,padding:'8px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,background:isHome?'#059669':'transparent',color:isHome?'white':'#9ca3af'}},'🏠 At Home')
       ),
+
       React.createElement('div',{style:{display:'flex',background:'#1a0030',borderRadius:10,padding:4,marginBottom:12,gap:2}},
-        DAYS.map(function(d,i){return React.createElement('button',{key:i,onClick:function(){setTab(i);},style:{flex:1,padding:'8px 2px',borderRadius:8,border:'none',cursor:'pointer',fontSize:10,fontWeight:700,background:tab===i&&!isTips?'#7c3aed':'transparent',color:tab===i&&!isTips?'white':'#9ca3af'}},d.label);}),
-        React.createElement('button',{onClick:function(){setTab(DAYS.length);},style:{flex:1,padding:'8px 2px',borderRadius:8,border:'none',cursor:'pointer',fontSize:10,fontWeight:700,background:isTips?'#7c3aed':'transparent',color:isTips?'white':'#9ca3af'}},'TIPS')
+        DAY_TABS.map(function(lbl,i){
+          var active=tab===i;
+          return React.createElement('button',{key:i,onClick:function(){setTab(i);setChecked({});},style:{flex:1,padding:'8px 2px',borderRadius:8,border:'none',cursor:'pointer',fontSize:10,fontWeight:700,background:active?'#7c3aed':'transparent',color:active?'white':'#9ca3af'}},lbl);
+        })
       ),
+
+      // Week selector
       React.createElement('div',{style:{marginBottom:14}},
-        React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'#6b7280',marginBottom:6,letterSpacing:1}},'PHASE'),
-        React.createElement('div',{style:{display:'flex',gap:8}},
-          ['Weeks 1-4','Weeks 5-8','Weeks 9-12'].map(function(l,i){return React.createElement('button',{key:i,onClick:function(){setPhase(i);setChecked({});},style:{flex:1,padding:'8px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,background:phase===i?'#7c3aed':'#1a0030',color:phase===i?'white':'#9ca3af'}},l);})
-        )
+        React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
+          React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'#6b7280',letterSpacing:1}},'WEEK'),
+          React.createElement('div',{style:{fontSize:10,color:'#6b7280',fontStyle:'italic'}},overridden?'manual override':'auto: week '+curWeek)
+        ),
+        React.createElement('div',{style:{display:'flex',gap:4,flexWrap:'wrap'}},
+          [1,2,3,4,5,6,7,8,9,10,11,12].map(function(w){
+            var isAuto=!overridden&&w===curWeek;
+            return React.createElement('button',{key:w,onClick:function(){setWeek(w);setOverridden(w!==curWeek);setChecked({});},style:{width:'calc(25% - 3px)',padding:'7px 2px',borderRadius:8,border:isAuto?'2px solid #c084fc':'1px solid #3b0764',cursor:'pointer',fontSize:11,fontWeight:700,background:week===w?phaseColor:'#1a0030',color:week===w?'white':'#9ca3af'}},'Wk '+w);
+          })
+        ),
+        overridden&&React.createElement('button',{onClick:function(){setWeek(curWeek);setOverridden(false);setChecked({});},style:{marginTop:6,background:'none',border:'1px solid #6b7280',borderRadius:6,color:'#9ca3af',fontSize:11,padding:'4px 10px',cursor:'pointer',width:'100%'}},'↩ Reset to auto (Week '+curWeek+')')
       ),
-      !isTips&&day&&React.createElement('div',null,
-        React.createElement('div',{style:{background:'#1a0030',borderRadius:8,padding:'10px 14px',fontSize:12,color:isHome?'#4ade80':'#a78bfa',marginBottom:14,fontWeight:600}},day.title+' · '+(isHome?day.homesub:day.sub)),
+
+      !isTips&&!isWarmup&&dayData&&React.createElement('div',{key:mode+'-'+tab+'-'+week},
+        React.createElement('div',{style:{background:'#1a0030',borderRadius:8,padding:'10px 14px',fontSize:12,color:isHome?'#4ade80':'#a78bfa',marginBottom:14,fontWeight:600}},
+          ['🔥 Power Day','🔥 Burnout Day','🍑 Full Glute Day'][tab]+' · Week '+week+' · '+(isHome?'🏠 At Home':'🏋️ Gym')
+        ),
         exs.map(function(ex,i){
-          var ckey=mode+'-'+tab+'-'+phase+'-'+i,ekey=mode+'-'+tab+'-e-'+i,lkey=mode+'-'+tab+'-l-'+i;
-          return React.createElement(Card,{key:i,ex:ex,phase:phase,isDone:!!checked[ckey],isOpen:!!expanded[ekey],showLog:!!logOpen[lkey],isHome:isHome,logDate:logDate,
-            onCheck:function(){ck(ckey);},
-            onExpand:function(ev){if(ev&&ev.stopPropagation)ev.stopPropagation();ek(ekey);},
-            onToggleLog:function(){lk(lkey);},
+          var ck_='mode'+mode+'tab'+tab+'wk'+week+'i'+i;
+          return React.createElement(Card,{key:ck_,ex:ex,isDone:!!checked[ck_],isOpen:!!expanded[ck_+'e'],showLog:!!logOpen[ck_+'l'],logDate:logDate,
+            onCheck:function(){ck(ck_);},
+            onExpand:function(){ek(ck_+'e');},
+            onToggleLog:function(){lk(ck_+'l');},
             onLogSaved:function(){setHistRefresh(function(x){return x+1;});}
           });
         })
       ),
+
+      isWarmup&&React.createElement('div',{key:'warmup'},
+        React.createElement('div',{style:{background:'#1a0030',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#a78bfa',marginBottom:14,fontWeight:600}},'🌡️ Activation · Before EVERY session · 8-10 min'),
+        WARMUP.map(function(ex,i){
+          var ck_='warmup'+i;
+          return React.createElement(Card,{key:ck_,ex:ex,isDone:!!checked[ck_],isOpen:!!expanded[ck_+'e'],showLog:!!logOpen[ck_+'l'],logDate:logDate,
+            onCheck:function(){ck(ck_);},
+            onExpand:function(){ek(ck_+'e');},
+            onToggleLog:function(){lk(ck_+'l');},
+            onLogSaved:function(){setHistRefresh(function(x){return x+1;});}
+          });
+        })
+      ),
+
       isTips&&React.createElement('div',null,
         React.createElement('div',{style:{fontSize:13,fontWeight:700,color:'#c084fc',marginBottom:12}},'Your Glute Growth Guide'),
-        TIPS.map(function(tip,i){return React.createElement('div',{key:i,style:{background:'#1a0030',border:'1px solid #3b0764',borderRadius:12,padding:'12px 14px',marginBottom:10}},React.createElement('div',{style:{display:'flex',gap:10,alignItems:'flex-start'}},React.createElement('span',{style:{fontSize:20}},tip.emoji),React.createElement('div',null,React.createElement('div',{style:{fontWeight:700,fontSize:13,color:'white',marginBottom:4}},tip.title),React.createElement('div',{style:{fontSize:12,color:'#9ca3af',lineHeight:1.5}},tip.body))));}),
+        TIPS.map(function(tip,i){return React.createElement('div',{key:i,style:{background:'#1a0030',border:'1px solid #3b0764',borderRadius:12,padding:'12px 14px',marginBottom:10}},
+          React.createElement('div',{style:{display:'flex',gap:10,alignItems:'flex-start'}},
+            React.createElement('span',{style:{fontSize:20}},tip.emoji),
+            React.createElement('div',null,
+              React.createElement('div',{style:{fontWeight:700,fontSize:13,color:'white',marginBottom:4}},tip.title),
+              React.createElement('div',{style:{fontSize:12,color:'#9ca3af',lineHeight:1.5}},tip.body)
+            )
+          )
+        );}),
         React.createElement('div',{style:{marginTop:16,background:'#1a0030',borderRadius:10,padding:'14px 16px',fontSize:12,color:'#c084fc',fontWeight:600,textAlign:'center',border:'1px solid #3b0764'}},'🍑 Consistency over intensity. Show up Mon · Wed · Fri and your body will transform.')
       )
     )
