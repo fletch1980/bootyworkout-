@@ -41,284 +41,81 @@
     .hist-day-toggle{font-size:11px;color:#a78bfa;font-weight:700;}
     .phase-badge{display:inline-block;color:white;font-size:10px;font-weight:800;border-radius:20px;padding:3px 10px;letter-spacing:1px;}
     .week-badge{display:inline-block;background:#1a0030;border:1px solid #7c3aed;color:#c084fc;font-size:10px;font-weight:800;border-radius:20px;padding:3px 10px;margin-left:6px;}
+    .yt-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#ff0000;border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:8px 12px;cursor:pointer;margin-bottom:10px;text-decoration:none;}
+    .yt-btn:hover{background:#cc0000;}
   </style>
 </head>
 <body>
 <div id="root"></div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     EXERCISE DATA — 12 weeks × 3 days × gym + home
-     Weeks 1-4: same exercises, weights climb, order consistent
-     Weeks 5-8: 1-2 swaps per week, order rotates, heavier
-     Weeks 9-12: peak exercises, max weight, order rotates
-════════════════════════════════════════════════════════════ -->
 <script>
 var PROGRAM_START = "2026-03-09";
 
-// helpers used by data
 function ex(name,area,emoji,sets,weights,notes,tip,howto){
   return {name:name,area:area,emoji:emoji,sets:sets,weights:weights,notes:notes,tip:tip,howto:howto};
 }
 
-// ── EXERCISE LIBRARY ─────────────────────────────────────────
 var E = {
-  // Hip Thrusts
   hipThrust: function(sets,w,note){return ex("Barbell Hip Thrust","Glutes","🏋️",sets,w,note||"Upper back on bench, padded bar on hips. Drive through heels, squeeze hard at the top.","Hold 1 full second at the top — that squeeze is where growth happens",["Upper back rests on bench, bar padded across hips","Feet flat, hip-width, knees bent 90°","Drive through heels and thrust hips up","Squeeze glutes HARD at top — hold 1 second","Lower slowly — 3 counts down","Keep chin tucked, do not arch lower back"]);},
   hipThrustBanded: function(sets,w,note){return ex("Banded Barbell Hip Thrust","Glutes","🏋️",sets,w,note||"Band above knees + bar. Push knees OUT against band at the top. More glute activation.","Band + bar = maximum glute activation. Drive knees OUT at the top.",["Band above knees, bar padded across hips, upper back on bench","Feet flat, hip-width, knees bent 90°","Drive through heels, push knees OUT against band","Squeeze glutes HARD — hold 1-2 seconds","Lower slowly — 3 counts down","Feel the extra burn in glute medius from the band"]);},
   hipThrustPause: function(sets,w){return ex("Paused Hip Thrust","Glutes — Peak","🏋️",sets,w,"2-second pause at the top on EVERY rep. Heaviest weight of the program. This builds peak shape.","2 full seconds at the top every rep — no shortcuts in the peak phase",["Upper back on bench, band above knees, heavy bar on hips","Drive through heels, push knees OUT","Squeeze glutes HARD — HOLD 2 full seconds at top","Feel every muscle in your glutes working","Lower slowly — 3 counts down","This is your peak movement — own every rep"]);},
-
-  // RDL variations
   rdl: function(sets,w){return ex("Romanian Deadlift","Hamstrings & Glutes","🏋️",sets,w,"Hinge at hips, push butt back. Feel the hamstring stretch at the bottom. Back flat throughout.","Think: close the car door with your butt on the way back up",["Stand holding dumbbells, slight knee bend","Hinge at HIPS — push butt backward","Lower along legs until strong hamstring stretch","Keep back flat the entire time","Drive hips forward to stand, squeeze glutes","The stretch at the bottom is where the magic happens"]);},
   rdlSlow: function(sets,w){return ex("Romanian Deadlift — Slow Tempo","Hamstrings & Glutes","🏋️",sets,w,"3 counts down, 1 count up. Heavier weight. The slow lowering is where gains happen.","3 seconds down, explode up. Eccentric loading builds the most muscle.",["Stand holding heavier dumbbells","Lower SLOWLY — 3 full counts down","Push butt back, deep hamstring stretch","Back flat throughout","Explode up — squeeze glutes at the top","Challenge the weight this phase"]);},
   singleLegRDL: function(sets,w){return ex("Single-Leg Romanian Deadlift","Hamstrings & Glutes — Peak","🏋️",sets,w,"One leg at a time. Forces each glute to work independently. Go lighter than you think.","Slight bend in standing knee — focus on the hip hinge not the balance",["Stand on one foot, slight bend in knee","Hold dumbbell in opposite hand to standing leg","Hinge at hips — lower dumbbell toward floor","Keep back flat, feel single-leg hamstring stretch","Drive hips forward to stand, squeeze glute","Complete all reps, switch legs"]);},
-
-  // Squat variations
   sumoGoblet: function(sets,w){return ex("Sumo Goblet Squat","Inner Thighs & Glutes","🦵",sets,w,"Wide stance, toes out 45°. Sit DOWN between your legs — not back.","Press knees out with elbows at the bottom for a deeper stretch",["Feet wider than shoulder-width, toes out 45°","Hold dumbbell vertically at chest","Sit DOWN between legs","Chest tall, knees tracking over toes","Elbows press knees wider at the bottom","Drive through heels to stand, squeeze at top"]);},
   sumoGobletPause: function(sets,w){return ex("Sumo Goblet Squat — Pause","Inner Thighs & Glutes","🦵",sets,w,"3-second pause at the bottom every rep. Heavier than last phase. Maximum stretch and tension.","3 seconds at the bottom — that's where the glute stretch is deepest",["Feet wider than shoulder-width, toes out 45°","Heavier dumbbell at chest","Sit DOWN between legs — as deep as comfortable","PAUSE 3 full seconds at bottom","Drive through heels to stand","Squeeze glutes and inner thighs hard at top"]);},
   bulgarianSplit: function(sets,w){return ex("Bulgarian Split Squat","Glutes & Quads","🦵",sets,w,"Back foot on bench, front foot forward. Lower straight DOWN. Front heel drives you up.","The further forward your front foot, the more glute you recruit",["Stand 2 feet in front of a bench","Rest top of back foot on bench","Hold dumbbells at sides","Lower straight DOWN — back knee toward floor","Front knee tracks over toes","Drive through front HEEL to stand — squeeze glute at top"]);},
   bulgarianSplitHeavy: function(sets,w){return ex("Bulgarian Split Squat — Heavy","Glutes & Quads — Build","🦵",sets,w,"Heavier than last phase. Full depth — back knee touches floor. This builds serious glute shape.","Lead with your front heel on the way up — keeps work in the glute",["Back foot elevated, front foot well forward","Heavier dumbbells at sides","Lower straight DOWN — back knee touches floor","Drive through FRONT HEEL to stand","Squeeze glute at top of every rep","Heavier than last week — challenge it"]);},
   rearFootElevated: function(sets,w){return ex("Rear Foot Elevated Split Squat","Glutes — Peak","🦵",sets,w,"Peak phase. Heaviest split squat yet. Full depth every rep. This builds serious shape.","Front heel drives you up — that keeps the glute doing the work",["Back foot elevated on bench, front foot well forward","Heaviest dumbbells at sides","Lower — back knee touches floor","Drive through FRONT HEEL to stand","Squeeze glute hard at top","4 sets — this is your peak shape builder"]);},
-
-  // Kickbacks
   standingKickback: function(sets,w,note){return ex("Standing Kickback","Glutes — Isolation","🦶",sets,w,note||"Stand tall, slight forward lean. Kick straight back, squeeze hard at top, hold 1 second.","Slow controlled reps beat fast sloppy ones — pause at the top",["Stand facing wall or bench, ankle weight on working leg","Slight forward lean, core tight","Standing leg slightly bent","Kick working leg STRAIGHT back — not to the side","Squeeze glute hard at top, hold 1 second","Lower slowly — resist gravity on the way down"]);},
   standingKickbackHold: function(sets,w){return ex("Standing Kickback — 2 sec Hold","Glutes — Isolation","🦶",sets,w,"Heavier ankle weight. Hold 2 full seconds at the top on every rep.","2 seconds at top, 3 counts down — slow and heavy wins",["Stand facing wall, heavier ankle weight","Slight forward lean, core tight","Kick STRAIGHT back — not to the side","Squeeze HARD — hold 2 full seconds","Lower — 3 full counts down","Control the whole movement"]);},
   cableKickback: function(sets,w){return ex("Cable Kickback","Glutes — Isolation","🦶",sets,w,"Cable with ankle attachment. Stand tall, kick straight back, hold 2 seconds. Constant tension throughout.","Cable keeps tension on the whole movement — more effective than free weights",["Attach ankle cuff to low cable pulley","Stand facing machine, slight forward lean","Core tight, hold machine for balance","Kick working leg STRAIGHT back","Squeeze glute HARD at top — hold 2 seconds","Lower slowly against resistance — do not let it snap back"]);},
   cableKickbackHeavy: function(sets,w){return ex("Cable Kickback — Heavy","Glutes — Isolation Peak","🦶",sets,w,"Heaviest cable weight of program. 2 full seconds at top every rep. 4 sets.","2 seconds at top every rep — peak isolation work",["Ankle cuff on low cable, heavier setting","Stand facing machine, slight forward lean","Kick STRAIGHT back — control the movement","Squeeze HARD — hold 2 full seconds","Lower — 3 full counts against resistance","4 sets each leg"]);},
-
-  // Abduction
   abductionMachine: function(sets,w){return ex("Seated Abduction Machine","Glute Medius","↔️",sets,w,"Pads on outside of knees. Push OUT and hold 2 seconds.","Lean slightly forward to shift work to glute medius instead of TFL",["Sit upright, pads against outside of knees","Feet flat, core engaged","Push legs OUT — slow and controlled","Hold open 2 full seconds","Squeeze outer glutes throughout","Return slowly"]);},
   abductionMachineHeavy: function(sets,w){return ex("Seated Abduction Machine — Heavy","Glute Medius — Build","↔️",sets,w,"Heavier weight this phase. Hold 2 seconds. You should feel the outer glute working hard.","Go heavier than you think — this muscle responds to load",["Sit upright, heavier weight set","Pads against outside of knees","Push legs OUT — slow and controlled","Hold 2 full seconds — squeeze hard","Return slowly — do not let weight crash back","Heavier than last phase"]);},
   abductionDrop: function(sets,w){return ex("Abduction Machine — Drop Set","Glute Medius — Peak","↔️",sets,w,"20 reps at working weight, immediately drop 20% and do 10 more. Deep burn in glute medius.","Drop straight into the lighter weight — no rest between working set and drop",["Set weight heavier than last phase","Do 20 reps — slow, hold 2 seconds each","Immediately drop weight 20%","Do 10 more reps — lighter but burning","3 rounds total","Peak outer glute work"]);},
   clamshell: function(sets,w){return ex("Side-Lying Clamshell","Glute Medius — Outer Round","↔️",sets,w,"Band above knees, feet together. Open top knee — do not let pelvis rock.","Targets outer roundness — do not skip it just because it feels easy",["Lie on side, band above knees","Hips stacked, knees bent 45°, feet together","Keep feet together, rotate top knee upward","Do not let pelvis roll backward","Hold open 2 seconds, squeeze outer glute","Lower slowly, complete reps then flip"]);},
   lateralWalk: function(sets,w){return ex("Banded Lateral Walk","Glute Medius — Shape","🟣",sets,w,"Band above knees, stay low in slight squat. Never let feet fully meet.","Lower you stay, the harder your glutes work — do not rise up",["Band above knees, stand in slight squat","Wide step to the side — maintain squat","Other foot follows — do not fully close gap","20 steps right, 20 back left = 1 set","Stay low the entire set","Hands on hips for balance"]);},
-
-  // Leg Press
   legPress: function(sets,w){return ex("Leg Press — High & Wide","Glutes & Hamstrings","🦵",sets,w,"Feet HIGH and WIDE on platform. This targets glutes not quads.","Lower until knees at 90° — do not let lower back lift off seat",["Set feet HIGH on platform, wider than shoulder-width","Toes pointed slightly out","Lower sled slowly — knees to 90°","Push through HEELS — not balls of feet","Squeeze glutes as legs extend","Full range of motion every rep"]);},
   legPressHeavy: function(sets,w){return ex("Leg Press — High & Wide Heavy","Glutes & Hamstrings — Build","🦵",sets,w,"Heavier this phase. Same foot position — high and wide. Challenge the weight.","Back flat against seat — if it lifts, reduce the weight",["Feet HIGH and WIDE, toes out","Lower sled slowly — knees to 90°","Push through HEELS","Squeeze glutes as you press","Do not lock knees at top","Heavier than last phase — challenge it"]);},
   legPressPeak: function(sets,w){return ex("Leg Press — Peak","Glutes & Hamstrings — Peak","🦵",sets,w,"Heaviest leg press of program. 5 sets. Slow and controlled every rep.","5 sets at peak weight — back stays flat, full range every rep",["Feet HIGH and WIDE, toes out","Lower SLOWLY — full 90° at knee","Push through HEELS","Squeeze glutes as you press","Do not lock knees","5 sets — peak work"]);},
-
-  // Sumo Deadlift
   sumoDL: function(sets,w){return ex("Sumo Deadlift","Glutes, Hamstrings & Inner Thighs","🏋️",sets,w,"Wide stance, toes out. Push the floor apart as you drive up.","Squeeze inner thighs toward each other as you lock out",["Feet wide, toes out 45°","Grip inside legs, chest up, back flat","Push floor APART as you drive up","Squeeze glutes hard at lockout","Lower with control — 3 counts","Do not drop the weight"]);},
   sumoDLHeavy: function(sets,w){return ex("Sumo Deadlift — Heavy","Glutes, Hamstrings & Inner Thighs","🏋️",sets,w,"Heavier this phase. You know the movement — challenge the weight.","Push the floor apart — that cue keeps inner thighs and glutes engaged",["Feet wide, toes out 45°","Chest up, back flat","Push floor APART with maximum force","Squeeze glutes and inner thighs at lockout","Lower with control — 3 counts","Go heavier than last phase"]);},
-
-  // Glute bridges (home)
   gluteBridge: function(sets,w){return ex("Banded Glute Bridge","Glutes","🏠",sets,w,"Heavy band above knees, drive up and squeeze hard. Add dumbbell on hips when ready.","Touch your glutes before the set — neural cue increases activation",["Lie on back, band above knees, feet flat","Drive hips up — push knees OUT against band","Squeeze glutes HARD at top — hold 1 second","Lower slowly — 3 counts","Core braced throughout","If you feel hamstrings more, bring feet slightly closer"]);},
   gluteBridgeWeighted: function(sets,w){return ex("Weighted Glute Bridge","Glutes — Build","🏠",sets,w,"Heaviest band + dumbbell on hips. 2-second hold at top.","Press dumbbell into hips with both hands so it doesn't slide",["Lie on back, band above knees, dumbbell on hips","Drive hips up — push knees OUT against band","Squeeze HARD — hold 2 seconds","Lower slowly — 3 counts","Heavier than last phase","You should feel this more than before"]);},
   gluteBridgePulse: function(sets,w){return ex("Glute Bridge — Pulse Finish","Glutes — Peak","🏠",sets,w,"After 10 full reps, hold at top and pulse 10 times before lowering. Maximum burn.","Pulses at the top finish off the muscle completely — don't skip them",["Lie on back, heaviest band + heavy dumbbell on hips","Do 10 full reps with 2-second hold","On last rep — HOLD at top","Pulse 10 times — small range, stay up","Then lower — that is one set","Feel the fire in both glutes"]);},
-
-  // Home squat
   bwSumo: function(sets,w){return ex("Bodyweight Sumo Squat","Inner Thighs & Glutes","🏠",sets,w,"Wide stance, toes out. Band above knees. Pause 2 seconds at bottom.","Pause at bottom — feel the inner thigh and glute stretch",["Feet wider than shoulder-width, toes out 45°","Band above knees, arms at chest","Sit DOWN between legs — knees out","Pause 2 seconds at bottom","Drive through heels to stand","Squeeze glutes at top"]);},
   bwSumoWeighted: function(sets,w){return ex("Sumo Squat — Weighted","Inner Thighs & Glutes — Build","🏠",sets,w,"Heaviest dumbbell at chest, band above knees. 3-second pause at bottom.","3 seconds at bottom — deepest glute stretch of the week",["Heaviest dumbbell at chest, band above knees","Feet wide, toes out 45°","Squat DEEP — 3-second pause at bottom","Push knees OUT throughout","Drive through heels to stand","Squeeze hard at top"]);},
   bwSumoTempo: function(sets,w){return ex("Sumo Squat — Slow Tempo","Inner Thighs & Glutes — Peak","🏠",sets,w,"4 counts down, hold 3 seconds at bottom, 1 count up. Maximum time under tension.","Slow tempo builds more muscle than heavy weight alone",["Heaviest dumbbell, band above knees","4 counts down — controlled","Hold 3 seconds at bottom","Drive up in 1 count — explode","Squeeze at top","This is the hardest squat variation of the program"]);},
-
-  // Home kickback
   bandedKickback: function(sets,w){return ex("Banded Kickback","Glutes — Isolation","🏠",sets,w,"Anchor band at floor level, loop around ankle. Kick straight back, hold 1 second.","Hold 1 full second at top — that squeeze builds the shape",["Anchor band at floor level behind you","Loop band around working ankle","Stand tall, slight forward lean, core tight","Kick STRAIGHT back — not to the side","Squeeze glute hard at top, hold 1 second","Lower slowly — resist the band"]);},
   bandedKickbackHold: function(sets,w){return ex("Banded Kickback — 2 sec Hold","Glutes — Isolation Build","🏠",sets,w,"Heavier band. Hold 2 full seconds at top. Resist on the way back.","The heavier the band, the more you must control the return",["Anchor heavier band at floor level","Loop around working ankle","Kick STRAIGHT back — not to the side","Hold at top 2 full seconds, squeeze hard","Resist the band slowly on the way back","Heavier band this phase"]);},
   donkeyKick: function(sets,w){return ex("Donkey Kick","Glutes — Isolation","🦶",sets,w,"On all fours. Kick UP toward ceiling — sole faces up. Squeeze and hold.","Slow is more effective than fast — squeeze, do not rush",["On all fours, wrists under shoulders","Keep knee bent 90° throughout","Kick leg UP toward ceiling — sole faces up","Squeeze glute HARD, hold 1-2 seconds","Keep hips square — do not rotate","Lower slowly"]);},
   donkeyKickHeavy: function(sets,w){return ex("Donkey Kick — Heavy","Glutes — Build","🦶",sets,w,"Heavy ankle weight AND band stacked. 2 seconds at top. Keep hips square.","Stack ankle weight AND band for cable-like resistance",["On all fours, ankle weight AND band on working leg","Keep knee bent 90°","Kick UP toward ceiling — sole faces up","Squeeze HARD at top — hold 2 seconds","Keep hips absolutely square","Lower slowly — resist both"]);},
-
-  // Finishers
   frogPump: function(sets,w){return ex("Frog Pump","Glutes — Finisher","🐸",sets,w,"Lie on back, soles together, knees open. Pump hips up and squeeze.","These look easy — do 30 at the end of the week and then tell me that",["Lie on back, soles of feet pressed together","Knees fall open wide — frog position","Drive hips UP squeezing glutes","Small range of motion — all squeeze","Lower slightly and pump back up","30 reps — feel the glutes on fire"]);},
   frogPumpWeighted: function(sets,w){return ex("Weighted Frog Pump","Glutes — Finisher Build","🐸",sets,w,"Plate or dumbbell on hips. 30 loaded reps is much harder than bodyweight.","Add load and feel the immediate difference",["Lie on back, soles together, knees open","Hold weight on hips","Drive hips UP squeezing glutes","30 reps with load — small range","Lower slightly between reps — keep tension","Close the week strong"]);},
   singleLegBridge: function(sets,w){return ex("Single-Leg Glute Bridge","Glutes — Finisher","🏋️",sets,w,"One foot flat, other leg extended. Drive through planted heel, hips level.","Keep hips level — if one side drops, the glute isn't firing",["Lie on back, one foot flat, other leg extended","Drive through planted heel to lift hips","Squeeze working glute as hard as possible","Keep hips level throughout","Lower slowly","Switch legs after all reps"]);},
   singleLegBridgeWeighted: function(sets,w){return ex("Single-Leg Glute Bridge — Weighted","Glutes — Finisher Build","🏋️",sets,w,"Plate on hip this phase. Heavier = more glute challenge.","Add load — bodyweight alone won't challenge you anymore",["Lie on back, plate on working hip","One foot flat, other leg extended","Drive through planted heel to lift hips","Squeeze working glute — hips level","Lower slowly","Switch legs"]);},
-
-  // Warm-up
   warmLateralWalk: function(){return ex("Banded Lateral Walk","Glute Medius Activation","🟣","2 × 15 steps each way","Light band","Light band above knees, slight squat. Constant tension — never let feet meet.","Constant tension = activation — never let feet fully meet",["Band above knees, slight squat","Step sideways — never let feet fully meet","15 steps each way = 1 set","Stay low throughout","Core engaged","Activates glute medius before your workout"]);},
   warmBridge: function(){return ex("Bodyweight Glute Bridge","Glute Max Activation","🦵","2 × 15","Bodyweight","Touch your glutes before each set. Feel them work — not your back.","Touch your glutes — neural cue increases activation by 20-30%",["Lie on back, feet flat, knees bent","Touch your glutes — neural cue","Drive hips up, squeeze HARD at top","Hold 2 seconds","Lower slowly","If you feel hamstrings more, bring feet slightly closer"]);},
   warmClamshell: function(){return ex("Banded Clamshell","Glute Medius Activation","↔️","2 × 15 each","Light band","Side-lying, light band, feet together. Open knee — pelvis stays completely still.","If your hip rocks, the band is too heavy",["Lie on side, light band above knees","Hips stacked, knees bent 45°, feet together","Rotate top knee upward — pelvis STAYS still","Hold 1-2 seconds, squeeze outer glute","Lower slowly","Switch sides after all reps"]);},
   warmHipCircle: function(){return ex("Hip Circle","Hip Joint Warm-Up","🦶","10 each direction, each leg","Bodyweight","On all fours, draw big slow circles with one knee. Full range of motion.","Big slow circles — lubricates the joint before loading",["On all fours, wrists under shoulders","Bring one knee up and out to side","Draw large slow circle — forward, up, back, down","Make circle as big as comfortable","10 forward, 10 backward, switch legs","Important for back and hip joint health"]);},
 };
 
-// ── WARM-UP (same every week) ────────────────────────────────
 var WARMUP = [E.warmLateralWalk(), E.warmBridge(), E.warmClamshell(), E.warmHipCircle()];
 
-// ── 12-WEEK PROGRAM ──────────────────────────────────────────
-// Structure: WEEKS[weekNum][dayIndex 0=Mon,1=Wed,2=Fri][gym|home]
 var WEEKS = {};
-
-// ── WEEKS 1-4: Foundation ────────────────────────────────────
-WEEKS[1] = {
-  0: { // MON
-    gym:  [E.hipThrust("4 × 10-12","45 lb bar"), E.rdl("3 × 10-12","20-25 lb"), E.sumoGoblet("3 × 12-15","15-20 lb"), E.standingKickback("3 × 15 each","15-20 lb ankle weight"), E.abductionMachine("3 × 20","Light")],
-    home: [E.gluteBridge("4 × 10-12","Heavy band above knees"), E.bwSumo("3 × 12-15","Band above knees"), E.bandedKickback("3 × 15 each","Light band"), E.donkeyKick("3 × 15 each","Bodyweight"), E.lateralWalk("3 × 15 steps each way","Light band")]
-  },
-  1: { // WED
-    gym:  [E.sumoDL("4 × 12","45-55 lb"), E.clamshell("3 × 20 each","Light band"), E.donkeyKick("3 × 15 each","Bodyweight"), E.sumoGoblet("4 × 15","15 lb"), E.singleLegBridge("3 × 12 each","Bodyweight")],
-    home: [E.donkeyKick("3 × 15 each","Bodyweight"), E.clamshell("3 × 20 each","Light band"), E.bwSumo("4 × 15","Band above knees"), E.bandedKickback("3 × 15 each","Light band"), E.singleLegBridge("3 × 12 each","Bodyweight")]
-  },
-  2: { // FRI
-    gym:  [E.hipThrust("5 × 10","55-65 lb"), E.legPress("4 × 15","90-110 lb"), E.standingKickback("4 × 15 each","20-25 lb ankle weight","Slightly heavier than Monday. Squeeze 2 full seconds at top."), E.lateralWalk("3 × 20 steps each way","Light-medium band"), E.frogPump("3 × 30","Bodyweight")],
-    home: [E.gluteBridge("5 × 10","Heavy band + dumbbell on hips"), E.bwSumoWeighted("4 × 15","Band + dumbbell at chest"), E.bandedKickback("4 × 15 each","Medium band + ankle weight","Slightly heavier than Monday. 2 full seconds at top."), E.lateralWalk("3 × 20 steps each way","Medium band"), E.frogPump("3 × 30","Bodyweight")]
-  }
-};
-
-WEEKS[2] = {
-  0: {
-    gym:  [E.hipThrust("4 × 10-12","55 lb"), E.rdl("3 × 10-12","25-30 lb"), E.sumoGoblet("3 × 12-15","20 lb"), E.standingKickback("3 × 15 each","20 lb ankle weight"), E.abductionMachine("3 × 20","Light-moderate")],
-    home: [E.gluteBridge("4 × 10-12","Heavy band + light dumbbell"), E.bwSumo("3 × 12-15","Band + light dumbbell"), E.bandedKickback("3 × 15 each","Light-medium band"), E.donkeyKick("3 × 15 each","Light ankle weight"), E.lateralWalk("3 × 15 steps each way","Light-medium band")]
-  },
-  1: {
-    gym:  [E.sumoDL("4 × 12","50-60 lb"), E.clamshell("3 × 20 each","Light-medium band"), E.donkeyKick("3 × 15 each","5 lb ankle weight"), E.sumoGoblet("4 × 15","20 lb"), E.singleLegBridge("3 × 12 each","Bodyweight")],
-    home: [E.donkeyKick("3 × 15 each","Light ankle weight"), E.clamshell("3 × 20 each","Light-medium band"), E.bwSumo("4 × 15","Band + light dumbbell"), E.bandedKickback("3 × 15 each","Medium band"), E.singleLegBridge("3 × 12 each","Bodyweight")]
-  },
-  2: {
-    gym:  [E.hipThrust("5 × 10","65-70 lb"), E.legPress("4 × 15","100-120 lb"), E.standingKickback("4 × 15 each","20-25 lb ankle weight","Hold 2 full seconds at top every rep."), E.lateralWalk("3 × 20 steps each way","Medium band"), E.frogPump("3 × 30","Bodyweight")],
-    home: [E.gluteBridge("5 × 10","Heavy band + dumbbell"), E.bwSumoWeighted("4 × 15","Band + heavier dumbbell"), E.bandedKickback("4 × 15 each","Medium band + ankle weight"), E.lateralWalk("3 × 20 steps each way","Medium band"), E.frogPump("3 × 30","Bodyweight")]
-  }
-};
-
-WEEKS[3] = {
-  0: {
-    gym:  [E.hipThrust("4 × 10-12","60-65 lb"), E.sumoGoblet("3 × 12-15","20-25 lb"), E.rdl("3 × 10-12","25-30 lb"), E.abductionMachine("3 × 20","Moderate"), E.standingKickback("3 × 15 each","20-22 lb ankle weight")],
-    home: [E.gluteBridge("4 × 10-12","Heavy band + dumbbell"), E.bwSumo("3 × 12-15","Band + medium dumbbell"), E.bandedKickback("3 × 15 each","Medium band"), E.lateralWalk("3 × 15 steps each way","Medium band"), E.donkeyKick("3 × 15 each","Light-medium ankle weight")]
-  },
-  1: {
-    gym:  [E.sumoGoblet("4 × 15","20-22 lb"), E.sumoDL("4 × 12","55-65 lb"), E.clamshell("3 × 20 each","Medium band"), E.singleLegBridge("3 × 12 each","Bodyweight"), E.donkeyKick("3 × 15 each","5-8 lb ankle weight")],
-    home: [E.bwSumo("4 × 15","Band + dumbbell"), E.clamshell("3 × 20 each","Medium band"), E.donkeyKick("3 × 15 each","Medium ankle weight"), E.bandedKickback("3 × 15 each","Medium band"), E.singleLegBridge("3 × 12 each","Bodyweight")]
-  },
-  2: {
-    gym:  [E.hipThrust("5 × 10","70-75 lb"), E.legPress("4 × 15","110-130 lb"), E.lateralWalk("3 × 20 steps each way","Medium band"), E.standingKickback("4 × 15 each","22-25 lb ankle weight","Hold 2 full seconds at top."), E.frogPump("3 × 30","Bodyweight")],
-    home: [E.gluteBridge("5 × 10","Heavy band + heavier dumbbell"), E.lateralWalk("3 × 20 steps each way","Medium-heavy band"), E.bwSumoWeighted("4 × 15","Band + heavy dumbbell"), E.bandedKickback("4 × 15 each","Medium-heavy band + ankle weight"), E.frogPump("3 × 30","Bodyweight")]
-  }
-};
-
-WEEKS[4] = {
-  0: {
-    gym:  [E.hipThrust("4 × 10-12","65-70 lb"), E.rdlSlow("3 × 10-12","30-35 lb"), E.sumoGobletPause("3 × 12","22-25 lb"), E.standingKickback("3 × 15 each","22-25 lb ankle weight"), E.abductionMachine("4 × 20","Moderate")],
-    home: [E.gluteBridgeWeighted("4 × 10-12","Heaviest band + dumbbell"), E.bwSumoWeighted("3 × 12","Band + dumbbell"), E.bandedKickbackHold("3 × 15 each","Medium-heavy band"), E.donkeyKick("3 × 15 each","Medium ankle weight"), E.lateralWalk("3 × 20 steps each way","Medium band")]
-  },
-  1: {
-    gym:  [E.sumoDL("4 × 12","60-70 lb"), E.clamshell("4 × 20 each","Medium band"), E.sumoGobletPause("4 × 15","20 lb"), E.singleLegBridge("3 × 12 each","Bodyweight"), E.donkeyKick("3 × 15 each","8-10 lb ankle weight")],
-    home: [E.clamshell("4 × 20 each","Medium band"), E.bwSumoWeighted("4 × 15","Band + dumbbell"), E.donkeyKickHeavy("3 × 15 each","Medium ankle weight + band"), E.bandedKickback("3 × 15 each","Medium-heavy band"), E.singleLegBridge("3 × 12 each","Bodyweight")]
-  },
-  2: {
-    gym:  [E.hipThrust("5 × 10","75-80 lb"), E.legPress("4 × 15","120-140 lb"), E.standingKickbackHold("4 × 15 each","25 lb ankle weight"), E.lateralWalk("3 × 20 steps each way","Medium-heavy band"), E.frogPumpWeighted("3 × 30","BW + light plate")],
-    home: [E.gluteBridgeWeighted("5 × 10","Heaviest band + heavy dumbbell"), E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"), E.lateralWalk("3 × 20 steps each way","Heavy band"), E.frogPumpWeighted("3 × 30","Dumbbell on hips")]
-  }
-};
-
-// ── WEEKS 5-8: Build — 1-2 exercise swaps, heavier ──────────
-WEEKS[5] = {
-  0: {
-    gym:  [E.hipThrustBanded("4 × 10-12","65-75 lb"), E.rdlSlow("4 × 10-12","30-35 lb"), E.bulgarianSplit("3 × 10 each","10-15 lb"), E.standingKickbackHold("3 × 15 each","22-25 lb ankle weight"), E.abductionMachineHeavy("3 × 20","Moderate")],
-    home: [E.gluteBridgeWeighted("4 × 10-12","Heaviest band + heavy dumbbell"), E.bwSumoWeighted("3 × 12-15","Band + heavy dumbbell"), E.bandedKickbackHold("3 × 15 each","Heavy band"), E.donkeyKickHeavy("3 × 15 each","Medium ankle weight + band"), E.lateralWalk("3 × 20 steps each way","Heavy band")]
-  },
-  1: {
-    gym:  [E.sumoDLHeavy("4 × 12","65-75 lb"), E.cableKickback("3 × 15 each","Light-moderate cable"), E.clamshell("4 × 20 each","Medium band"), E.sumoGobletPause("4 × 15","22-25 lb"), E.singleLegBridgeWeighted("3 × 12 each","BW + 10 lb plate")],
-    home: [E.bwSumoWeighted("4 × 15","Band + heavy dumbbell"), E.donkeyKickHeavy("3 × 15 each","Medium-heavy ankle weight + band"), E.clamshell("4 × 20 each","Medium-heavy band"), E.bandedKickbackHold("3 × 15 each","Heavy band"), E.singleLegBridgeWeighted("3 × 12 each","Dumbbell on hip")]
-  },
-  2: {
-    gym:  [E.hipThrustBanded("5 × 10","75-85 lb"), E.legPressHeavy("4 × 15","130-150 lb"), E.cableKickback("4 × 15 each","Moderate cable"), E.lateralWalk("3 × 20 steps each way","Medium-heavy band"), E.frogPumpWeighted("3 × 30","BW + light plate")],
-    home: [E.gluteBridgeWeighted("5 × 10","Heaviest band + heavy dumbbell"), E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"), E.lateralWalk("3 × 20 steps each way","Heavy band"), E.frogPumpWeighted("3 × 30","Dumbbell on hips")]
-  }
-};
-
-WEEKS[6] = {
-  0: {
-    gym:  [E.hipThrustBanded("4 × 10-12","70-80 lb"), E.bulgarianSplit("3 × 10 each","12-18 lb"), E.rdlSlow("4 × 10-12","33-38 lb"), E.abductionMachineHeavy("4 × 20","Moderate"), E.standingKickbackHold("3 × 15 each","25 lb ankle weight")],
-    home: [E.gluteBridgeWeighted("4 × 10-12","Heaviest band + heavier dumbbell"), E.donkeyKickHeavy("3 × 15 each","Heavy ankle weight + band"), E.bwSumoWeighted("3 × 12","Band + heaviest dumbbell"), E.lateralWalk("3 × 20 steps each way","Heavy band"), E.bandedKickbackHold("3 × 15 each","Heavy band")]
-  },
-  1: {
-    gym:  [E.cableKickback("3 × 15 each","Moderate cable"), E.sumoDLHeavy("4 × 12","70-80 lb"), E.sumoGobletPause("4 × 15","25 lb"), E.clamshell("4 × 20 each","Medium-heavy band"), E.singleLegBridgeWeighted("3 × 12 each","BW + 10-15 lb")],
-    home: [E.donkeyKickHeavy("3 × 15 each","Heavy ankle weight + band"), E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"), E.clamshell("4 × 20 each","Heavy band"), E.singleLegBridgeWeighted("3 × 12 each","Dumbbell on hip"), E.bandedKickbackHold("3 × 15 each","Heavy band")]
-  },
-  2: {
-    gym:  [E.hipThrustBanded("5 × 10","80-90 lb"), E.legPressHeavy("4 × 15","140-160 lb"), E.lateralWalk("4 × 20 steps each way","Heavy band"), E.cableKickback("4 × 15 each","Moderate cable"), E.frogPumpWeighted("3 × 30","Light plate")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + dumbbell"), E.lateralWalk("4 × 20 steps each way","Heavy band"), E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"), E.frogPumpWeighted("3 × 30","Heavy dumbbell")]
-  }
-};
-
-WEEKS[7] = {
-  0: {
-    gym:  [E.hipThrustBanded("5 × 10","75-85 lb"), E.rdlSlow("4 × 10-12","35-40 lb"), E.bulgarianSplitHeavy("3 × 10 each","15-20 lb"), E.cableKickback("3 × 15 each","Moderate cable"), E.abductionMachineHeavy("4 × 20","Moderate-heavy")],
-    home: [E.gluteBridgePulse("4 × 10 + 10 pulses","Heaviest band + dumbbell"), E.bwSumoTempo("3 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"), E.donkeyKickHeavy("3 × 15 each","Heavy ankle weight + band"), E.lateralWalk("4 × 20 steps each way","Heavy band")]
-  },
-  1: {
-    gym:  [E.sumoDLHeavy("5 × 10","75-85 lb"), E.sumoGobletPause("4 × 15","25-28 lb"), E.cableKickback("4 × 15 each","Moderate cable"), E.clamshell("4 × 20 each","Heavy band"), E.singleLegBridgeWeighted("3 × 12 each","BW + 15 lb")],
-    home: [E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heavy ankle weight + band"), E.clamshell("4 × 20 each","Heavy band"), E.bandedKickbackHold("4 × 15 each","Heaviest band"), E.singleLegBridgeWeighted("3 × 12 each","Heavy dumbbell on hip")]
-  },
-  2: {
-    gym:  [E.hipThrustBanded("5 × 10","85-90 lb"), E.legPressHeavy("5 × 15","150-170 lb"), E.cableKickback("4 × 15 each","Moderate-heavy cable"), E.lateralWalk("4 × 20 steps each way","Heavy band"), E.frogPumpWeighted("3 × 30","Moderate plate")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heavy dumbbell"), E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heavy dumbbell")]
-  }
-};
-
-WEEKS[8] = {
-  0: {
-    gym:  [E.hipThrustBanded("5 × 10","80-90 lb"), E.bulgarianSplitHeavy("4 × 10 each","18-22 lb"), E.rdlSlow("4 × 10-12","38-45 lb"), E.abductionMachineHeavy("4 × 20","Moderate-heavy"), E.cableKickback("4 × 15 each","Moderate cable")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heavy dumbbell"), E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bandedKickbackHold("4 × 15 each","Heaviest band"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
-  },
-  1: {
-    gym:  [E.sumoDLHeavy("5 × 10","80-90 lb"), E.cableKickback("4 × 15 each","Moderate-heavy cable"), E.sumoGobletPause("4 × 15","28-30 lb"), E.abductionMachineHeavy("4 × 20","Moderate-heavy"), E.singleLegBridgeWeighted("3 × 12 each","BW + 15-20 lb")],
-    home: [E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.clamshell("4 × 20 each","Heaviest band"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.singleLegBridgeWeighted("3 × 12 each","Heaviest dumbbell on hip")]
-  },
-  2: {
-    gym:  [E.hipThrustBanded("5 × 10","88-95 lb"), E.legPressHeavy("5 × 15","160-180 lb"), E.cableKickback("4 × 15 each","Moderate-heavy cable"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Moderate-heavy plate")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + heaviest ankle weight"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]
-  }
-};
-
-// ── WEEKS 9-12: Peak ─────────────────────────────────────────
-WEEKS[9] = {
-  0: {
-    gym:  [E.hipThrustPause("5 × 10","88-95 lb"), E.singleLegRDL("3 × 10 each","20-25 lb"), E.rearFootElevated("4 × 10 each","18-22 lb"), E.cableKickbackHeavy("4 × 15 each","Moderate-heavy cable"), E.abductionDrop("3 × 20 + drop","Moderate-heavy")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
-  },
-  1: {
-    gym:  [E.sumoDLHeavy("5 × 10","85-95 lb"), E.cableKickbackHeavy("4 × 15 each","Heavy cable"), E.sumoGobletPause("4 × 15","30-35 lb"), E.abductionDrop("3 × 20 + drop","Moderate-heavy"), E.singleLegBridgeWeighted("3 × 15 each","BW + 15-20 lb")],
-    home: [E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.clamshell("4 × 20 each","Heaviest band"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.singleLegBridgeWeighted("3 × 15 each","Heaviest dumbbell on hip")]
-  },
-  2: {
-    gym:  [E.hipThrustPause("5 × 10","93-100 lb"), E.legPressPeak("5 × 15","165-185 lb"), E.cableKickbackHeavy("4 × 15 each","Heavy cable"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heavy plate")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + heaviest ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]
-  }
-};
-
-WEEKS[10] = {
-  0: {
-    gym:  [E.hipThrustPause("5 × 10","93-100 lb"), E.rearFootElevated("4 × 10 each","20-25 lb"), E.singleLegRDL("3 × 10 each","22-27 lb"), E.abductionDrop("3 × 20 + drop","Heavy"), E.cableKickbackHeavy("4 × 15 each","Heavy cable")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
-  },
-  1: {
-    gym:  [E.cableKickbackHeavy("4 × 15 each","Heavy cable"), E.sumoDLHeavy("5 × 10","90-100 lb"), E.abductionDrop("3 × 20 + drop","Heavy"), E.sumoGobletPause("5 × 15","33-38 lb"), E.singleLegBridgeWeighted("3 × 15 each","BW + 18-22 lb")],
-    home: [E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"), E.clamshell("4 × 20 each","Heaviest band"), E.singleLegBridgeWeighted("3 × 15 each","Heaviest dumbbell on hip")]
-  },
-  2: {
-    gym:  [E.hipThrustPause("5 × 10","98-108 lb"), E.legPressPeak("5 × 15","175-195 lb"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.cableKickbackHeavy("4 × 15 each","Heavy cable"), E.frogPumpWeighted("3 × 30","Heavy plate")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("4 × 15 each","Heaviest band + heaviest ankle weight"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]
-  }
-};
-
-WEEKS[11] = {
-  0: {
-    gym:  [E.hipThrustPause("5 × 10","100-110 lb"), E.singleLegRDL("4 × 10 each","25-30 lb"), E.rearFootElevated("4 × 10 each","23-28 lb"), E.cableKickbackHeavy("4 × 15 each","Heavy-max cable"), E.abductionDrop("4 × 20 + drop","Heavy")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.bandedKickbackHold("5 × 15 each","Heaviest band + ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
-  },
-  1: {
-    gym:  [E.sumoDLHeavy("5 × 10","95-108 lb"), E.abductionDrop("4 × 20 + drop","Heavy"), E.cableKickbackHeavy("4 × 15 each","Heavy-max cable"), E.sumoGobletPause("5 × 15","35-40 lb"), E.singleLegBridgeWeighted("4 × 15 each","BW + 20-25 lb")],
-    home: [E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("5 × 15 each","Heaviest band + ankle weight"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.clamshell("4 × 20 each","Heaviest band"), E.singleLegBridgeWeighted("4 × 15 each","Heaviest dumbbell on hip")]
-  },
-  2: {
-    gym:  [E.hipThrustPause("5 × 10","105-115 lb"), E.legPressPeak("5 × 15","183-200 lb"), E.cableKickbackHeavy("4 × 15 each","Heavy-max cable"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heavy-max plate")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]
-  }
-};
-
-WEEKS[12] = {
-  0: {
-    gym:  [E.hipThrustPause("5 × 10","108-115 lb"), E.rearFootElevated("4 × 10 each","25-30 lb"), E.singleLegRDL("4 × 10 each","27-32 lb"), E.abductionDrop("4 × 20 + drop","Heavy-max"), E.cableKickbackHeavy("5 × 15 each","Max cable")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"), E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"), E.lateralWalk("4 × 20 steps each way","Heaviest band")]
-  },
-  1: {
-    gym:  [E.sumoDLHeavy("5 × 10","100-112 lb"), E.cableKickbackHeavy("5 × 15 each","Max cable"), E.abductionDrop("4 × 20 + drop","Heavy-max"), E.sumoGobletPause("5 × 15","38-45 lb"), E.singleLegBridgeWeighted("4 × 15 each","BW + 22-27 lb")],
-    home: [E.donkeyKickHeavy("5 × 15 each","Heaviest ankle weight + band"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"), E.clamshell("4 × 20 each","Heaviest band"), E.singleLegBridgeWeighted("4 × 15 each","Heaviest dumbbell on hip")]
-  },
-  2: {
-    gym:  [E.hipThrustPause("5 × 10","110-120 lb"), E.legPressPeak("5 × 15","190-210 lb"), E.cableKickbackHeavy("5 × 15 each","Max cable"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Max plate")],
-    home: [E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"), E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"), E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"), E.lateralWalk("4 × 20 steps each way","Heaviest band"), E.frogPumpWeighted("3 × 30","Heaviest dumbbell — close the program! 🍑")]
-  }
-};
+WEEKS[1]={0:{gym:[E.hipThrust("4 × 10-12","45 lb bar"),E.rdl("3 × 10-12","20-25 lb"),E.sumoGoblet("3 × 12-15","15-20 lb"),E.standingKickback("3 × 15 each","15-20 lb ankle weight"),E.abductionMachine("3 × 20","Light")],home:[E.gluteBridge("4 × 10-12","Heavy band above knees"),E.bwSumo("3 × 12-15","Band above knees"),E.bandedKickback("3 × 15 each","Light band"),E.donkeyKick("3 × 15 each","Bodyweight"),E.lateralWalk("3 × 15 steps each way","Light band")]},1:{gym:[E.sumoDL("4 × 12","45-55 lb"),E.clamshell("3 × 20 each","Light band"),E.donkeyKick("3 × 15 each","Bodyweight"),E.sumoGoblet("4 × 15","15 lb"),E.singleLegBridge("3 × 12 each","Bodyweight")],home:[E.donkeyKick("3 × 15 each","Bodyweight"),E.clamshell("3 × 20 each","Light band"),E.bwSumo("4 × 15","Band above knees"),E.bandedKickback("3 × 15 each","Light band"),E.singleLegBridge("3 × 12 each","Bodyweight")]},2:{gym:[E.hipThrust("5 × 10","55-65 lb"),E.legPress("4 × 15","90-110 lb"),E.standingKickback("4 × 15 each","20-25 lb ankle weight","Slightly heavier than Monday. Squeeze 2 full seconds at top."),E.lateralWalk("3 × 20 steps each way","Light-medium band"),E.frogPump("3 × 30","Bodyweight")],home:[E.gluteBridge("5 × 10","Heavy band + dumbbell on hips"),E.bwSumoWeighted("4 × 15","Band + dumbbell at chest"),E.bandedKickback("4 × 15 each","Medium band + ankle weight","Slightly heavier than Monday. 2 full seconds at top."),E.lateralWalk("3 × 20 steps each way","Medium band"),E.frogPump("3 × 30","Bodyweight")]}};
+WEEKS[2]={0:{gym:[E.hipThrust("4 × 10-12","55 lb"),E.rdl("3 × 10-12","25-30 lb"),E.sumoGoblet("3 × 12-15","20 lb"),E.standingKickback("3 × 15 each","20 lb ankle weight"),E.abductionMachine("3 × 20","Light-moderate")],home:[E.gluteBridge("4 × 10-12","Heavy band + light dumbbell"),E.bwSumo("3 × 12-15","Band + light dumbbell"),E.bandedKickback("3 × 15 each","Light-medium band"),E.donkeyKick("3 × 15 each","Light ankle weight"),E.lateralWalk("3 × 15 steps each way","Light-medium band")]},1:{gym:[E.sumoDL("4 × 12","50-60 lb"),E.clamshell("3 × 20 each","Light-medium band"),E.donkeyKick("3 × 15 each","5 lb ankle weight"),E.sumoGoblet("4 × 15","20 lb"),E.singleLegBridge("3 × 12 each","Bodyweight")],home:[E.donkeyKick("3 × 15 each","Light ankle weight"),E.clamshell("3 × 20 each","Light-medium band"),E.bwSumo("4 × 15","Band + light dumbbell"),E.bandedKickback("3 × 15 each","Medium band"),E.singleLegBridge("3 × 12 each","Bodyweight")]},2:{gym:[E.hipThrust("5 × 10","65-70 lb"),E.legPress("4 × 15","100-120 lb"),E.standingKickback("4 × 15 each","20-25 lb ankle weight","Hold 2 full seconds at top every rep."),E.lateralWalk("3 × 20 steps each way","Medium band"),E.frogPump("3 × 30","Bodyweight")],home:[E.gluteBridge("5 × 10","Heavy band + dumbbell"),E.bwSumoWeighted("4 × 15","Band + heavier dumbbell"),E.bandedKickback("4 × 15 each","Medium band + ankle weight"),E.lateralWalk("3 × 20 steps each way","Medium band"),E.frogPump("3 × 30","Bodyweight")]}};
+WEEKS[3]={0:{gym:[E.hipThrust("4 × 10-12","60-65 lb"),E.sumoGoblet("3 × 12-15","20-25 lb"),E.rdl("3 × 10-12","25-30 lb"),E.abductionMachine("3 × 20","Moderate"),E.standingKickback("3 × 15 each","20-22 lb ankle weight")],home:[E.gluteBridge("4 × 10-12","Heavy band + dumbbell"),E.bwSumo("3 × 12-15","Band + medium dumbbell"),E.bandedKickback("3 × 15 each","Medium band"),E.lateralWalk("3 × 15 steps each way","Medium band"),E.donkeyKick("3 × 15 each","Light-medium ankle weight")]},1:{gym:[E.sumoGoblet("4 × 15","20-22 lb"),E.sumoDL("4 × 12","55-65 lb"),E.clamshell("3 × 20 each","Medium band"),E.singleLegBridge("3 × 12 each","Bodyweight"),E.donkeyKick("3 × 15 each","5-8 lb ankle weight")],home:[E.bwSumo("4 × 15","Band + dumbbell"),E.clamshell("3 × 20 each","Medium band"),E.donkeyKick("3 × 15 each","Medium ankle weight"),E.bandedKickback("3 × 15 each","Medium band"),E.singleLegBridge("3 × 12 each","Bodyweight")]},2:{gym:[E.hipThrust("5 × 10","70-75 lb"),E.legPress("4 × 15","110-130 lb"),E.lateralWalk("3 × 20 steps each way","Medium band"),E.standingKickback("4 × 15 each","22-25 lb ankle weight","Hold 2 full seconds at top."),E.frogPump("3 × 30","Bodyweight")],home:[E.gluteBridge("5 × 10","Heavy band + heavier dumbbell"),E.lateralWalk("3 × 20 steps each way","Medium-heavy band"),E.bwSumoWeighted("4 × 15","Band + heavy dumbbell"),E.bandedKickback("4 × 15 each","Medium-heavy band + ankle weight"),E.frogPump("3 × 30","Bodyweight")]}};
+WEEKS[4]={0:{gym:[E.hipThrust("4 × 10-12","65-70 lb"),E.rdlSlow("3 × 10-12","30-35 lb"),E.sumoGobletPause("3 × 12","22-25 lb"),E.standingKickback("3 × 15 each","22-25 lb ankle weight"),E.abductionMachine("4 × 20","Moderate")],home:[E.gluteBridgeWeighted("4 × 10-12","Heaviest band + dumbbell"),E.bwSumoWeighted("3 × 12","Band + dumbbell"),E.bandedKickbackHold("3 × 15 each","Medium-heavy band"),E.donkeyKick("3 × 15 each","Medium ankle weight"),E.lateralWalk("3 × 20 steps each way","Medium band")]},1:{gym:[E.sumoDL("4 × 12","60-70 lb"),E.clamshell("4 × 20 each","Medium band"),E.sumoGobletPause("4 × 15","20 lb"),E.singleLegBridge("3 × 12 each","Bodyweight"),E.donkeyKick("3 × 15 each","8-10 lb ankle weight")],home:[E.clamshell("4 × 20 each","Medium band"),E.bwSumoWeighted("4 × 15","Band + dumbbell"),E.donkeyKickHeavy("3 × 15 each","Medium ankle weight + band"),E.bandedKickback("3 × 15 each","Medium-heavy band"),E.singleLegBridge("3 × 12 each","Bodyweight")]},2:{gym:[E.hipThrust("5 × 10","75-80 lb"),E.legPress("4 × 15","120-140 lb"),E.standingKickbackHold("4 × 15 each","25 lb ankle weight"),E.lateralWalk("3 × 20 steps each way","Medium-heavy band"),E.frogPumpWeighted("3 × 30","BW + light plate")],home:[E.gluteBridgeWeighted("5 × 10","Heaviest band + heavy dumbbell"),E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"),E.lateralWalk("3 × 20 steps each way","Heavy band"),E.frogPumpWeighted("3 × 30","Dumbbell on hips")]}};
+WEEKS[5]={0:{gym:[E.hipThrustBanded("4 × 10-12","65-75 lb"),E.rdlSlow("4 × 10-12","30-35 lb"),E.bulgarianSplit("3 × 10 each","10-15 lb"),E.standingKickbackHold("3 × 15 each","22-25 lb ankle weight"),E.abductionMachineHeavy("3 × 20","Moderate")],home:[E.gluteBridgeWeighted("4 × 10-12","Heaviest band + heavy dumbbell"),E.bwSumoWeighted("3 × 12-15","Band + heavy dumbbell"),E.bandedKickbackHold("3 × 15 each","Heavy band"),E.donkeyKickHeavy("3 × 15 each","Medium ankle weight + band"),E.lateralWalk("3 × 20 steps each way","Heavy band")]},1:{gym:[E.sumoDLHeavy("4 × 12","65-75 lb"),E.cableKickback("3 × 15 each","Light-moderate cable"),E.clamshell("4 × 20 each","Medium band"),E.sumoGobletPause("4 × 15","22-25 lb"),E.singleLegBridgeWeighted("3 × 12 each","BW + 10 lb plate")],home:[E.bwSumoWeighted("4 × 15","Band + heavy dumbbell"),E.donkeyKickHeavy("3 × 15 each","Medium-heavy ankle weight + band"),E.clamshell("4 × 20 each","Medium-heavy band"),E.bandedKickbackHold("3 × 15 each","Heavy band"),E.singleLegBridgeWeighted("3 × 12 each","Dumbbell on hip")]},2:{gym:[E.hipThrustBanded("5 × 10","75-85 lb"),E.legPressHeavy("4 × 15","130-150 lb"),E.cableKickback("4 × 15 each","Moderate cable"),E.lateralWalk("3 × 20 steps each way","Medium-heavy band"),E.frogPumpWeighted("3 × 30","BW + light plate")],home:[E.gluteBridgeWeighted("5 × 10","Heaviest band + heavy dumbbell"),E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"),E.lateralWalk("3 × 20 steps each way","Heavy band"),E.frogPumpWeighted("3 × 30","Dumbbell on hips")]}};
+WEEKS[6]={0:{gym:[E.hipThrustBanded("4 × 10-12","70-80 lb"),E.bulgarianSplit("3 × 10 each","12-18 lb"),E.rdlSlow("4 × 10-12","33-38 lb"),E.abductionMachineHeavy("4 × 20","Moderate"),E.standingKickbackHold("3 × 15 each","25 lb ankle weight")],home:[E.gluteBridgeWeighted("4 × 10-12","Heaviest band + heavier dumbbell"),E.donkeyKickHeavy("3 × 15 each","Heavy ankle weight + band"),E.bwSumoWeighted("3 × 12","Band + heaviest dumbbell"),E.lateralWalk("3 × 20 steps each way","Heavy band"),E.bandedKickbackHold("3 × 15 each","Heavy band")]},1:{gym:[E.cableKickback("3 × 15 each","Moderate cable"),E.sumoDLHeavy("4 × 12","70-80 lb"),E.sumoGobletPause("4 × 15","25 lb"),E.clamshell("4 × 20 each","Medium-heavy band"),E.singleLegBridgeWeighted("3 × 12 each","BW + 10-15 lb")],home:[E.donkeyKickHeavy("3 × 15 each","Heavy ankle weight + band"),E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"),E.clamshell("4 × 20 each","Heavy band"),E.singleLegBridgeWeighted("3 × 12 each","Dumbbell on hip"),E.bandedKickbackHold("3 × 15 each","Heavy band")]},2:{gym:[E.hipThrustBanded("5 × 10","80-90 lb"),E.legPressHeavy("4 × 15","140-160 lb"),E.lateralWalk("4 × 20 steps each way","Heavy band"),E.cableKickback("4 × 15 each","Moderate cable"),E.frogPumpWeighted("3 × 30","Light plate")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + dumbbell"),E.lateralWalk("4 × 20 steps each way","Heavy band"),E.bwSumoWeighted("4 × 15","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"),E.frogPumpWeighted("3 × 30","Heavy dumbbell")]}};
+WEEKS[7]={0:{gym:[E.hipThrustBanded("5 × 10","75-85 lb"),E.rdlSlow("4 × 10-12","35-40 lb"),E.bulgarianSplitHeavy("3 × 10 each","15-20 lb"),E.cableKickback("3 × 15 each","Moderate cable"),E.abductionMachineHeavy("4 × 20","Moderate-heavy")],home:[E.gluteBridgePulse("4 × 10 + 10 pulses","Heaviest band + dumbbell"),E.bwSumoTempo("3 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heavy band + ankle weight"),E.donkeyKickHeavy("3 × 15 each","Heavy ankle weight + band"),E.lateralWalk("4 × 20 steps each way","Heavy band")]},1:{gym:[E.sumoDLHeavy("5 × 10","75-85 lb"),E.sumoGobletPause("4 × 15","25-28 lb"),E.cableKickback("4 × 15 each","Moderate cable"),E.clamshell("4 × 20 each","Heavy band"),E.singleLegBridgeWeighted("3 × 12 each","BW + 15 lb")],home:[E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"),E.donkeyKickHeavy("4 × 15 each","Heavy ankle weight + band"),E.clamshell("4 × 20 each","Heavy band"),E.bandedKickbackHold("4 × 15 each","Heaviest band"),E.singleLegBridgeWeighted("3 × 12 each","Heavy dumbbell on hip")]},2:{gym:[E.hipThrustBanded("5 × 10","85-90 lb"),E.legPressHeavy("5 × 15","150-170 lb"),E.cableKickback("4 × 15 each","Moderate-heavy cable"),E.lateralWalk("4 × 20 steps each way","Heavy band"),E.frogPumpWeighted("3 × 30","Moderate plate")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heavy dumbbell"),E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.frogPumpWeighted("3 × 30","Heavy dumbbell")]}};
+WEEKS[8]={0:{gym:[E.hipThrustBanded("5 × 10","80-90 lb"),E.bulgarianSplitHeavy("4 × 10 each","18-22 lb"),E.rdlSlow("4 × 10-12","38-45 lb"),E.abductionMachineHeavy("4 × 20","Moderate-heavy"),E.cableKickback("4 × 15 each","Moderate cable")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heavy dumbbell"),E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"),E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"),E.bandedKickbackHold("4 × 15 each","Heaviest band"),E.lateralWalk("4 × 20 steps each way","Heaviest band")]},1:{gym:[E.sumoDLHeavy("5 × 10","80-90 lb"),E.cableKickback("4 × 15 each","Moderate-heavy cable"),E.sumoGobletPause("4 × 15","28-30 lb"),E.abductionMachineHeavy("4 × 20","Moderate-heavy"),E.singleLegBridgeWeighted("3 × 12 each","BW + 15-20 lb")],home:[E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"),E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"),E.clamshell("4 × 20 each","Heaviest band"),E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"),E.singleLegBridgeWeighted("3 × 12 each","Heaviest dumbbell on hip")]},2:{gym:[E.hipThrustBanded("5 × 10","88-95 lb"),E.legPressHeavy("5 × 15","160-180 lb"),E.cableKickback("4 × 15 each","Moderate-heavy cable"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.frogPumpWeighted("3 × 30","Moderate-heavy plate")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heaviest band + heaviest ankle weight"),E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]}};
+WEEKS[9]={0:{gym:[E.hipThrustPause("5 × 10","88-95 lb"),E.singleLegRDL("3 × 10 each","20-25 lb"),E.rearFootElevated("4 × 10 each","18-22 lb"),E.cableKickbackHeavy("4 × 15 each","Moderate-heavy cable"),E.abductionDrop("3 × 20 + drop","Moderate-heavy")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"),E.bwSumoTempo("4 × 12","Band + heaviest dumbbell"),E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"),E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"),E.lateralWalk("4 × 20 steps each way","Heaviest band")]},1:{gym:[E.sumoDLHeavy("5 × 10","85-95 lb"),E.cableKickbackHeavy("4 × 15 each","Heavy cable"),E.sumoGobletPause("4 × 15","30-35 lb"),E.abductionDrop("3 × 20 + drop","Moderate-heavy"),E.singleLegBridgeWeighted("3 × 15 each","BW + 15-20 lb")],home:[E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"),E.clamshell("4 × 20 each","Heaviest band"),E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"),E.singleLegBridgeWeighted("3 × 15 each","Heaviest dumbbell on hip")]},2:{gym:[E.hipThrustPause("5 × 10","93-100 lb"),E.legPressPeak("5 × 15","165-185 lb"),E.cableKickbackHeavy("4 × 15 each","Heavy cable"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.frogPumpWeighted("3 × 30","Heavy plate")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heaviest band + heaviest ankle weight"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]}};
+WEEKS[10]={0:{gym:[E.hipThrustPause("5 × 10","93-100 lb"),E.rearFootElevated("4 × 10 each","20-25 lb"),E.singleLegRDL("3 × 10 each","22-27 lb"),E.abductionDrop("3 × 20 + drop","Heavy"),E.cableKickbackHeavy("4 × 15 each","Heavy cable")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"),E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"),E.lateralWalk("4 × 20 steps each way","Heaviest band")]},1:{gym:[E.cableKickbackHeavy("4 × 15 each","Heavy cable"),E.sumoDLHeavy("5 × 10","90-100 lb"),E.abductionDrop("3 × 20 + drop","Heavy"),E.sumoGobletPause("5 × 15","33-38 lb"),E.singleLegBridgeWeighted("3 × 15 each","BW + 18-22 lb")],home:[E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heaviest band + ankle weight"),E.clamshell("4 × 20 each","Heaviest band"),E.singleLegBridgeWeighted("3 × 15 each","Heaviest dumbbell on hip")]},2:{gym:[E.hipThrustPause("5 × 10","98-108 lb"),E.legPressPeak("5 × 15","175-195 lb"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.cableKickbackHeavy("4 × 15 each","Heavy cable"),E.frogPumpWeighted("3 × 30","Heavy plate")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("4 × 15 each","Heaviest band + heaviest ankle weight"),E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]}};
+WEEKS[11]={0:{gym:[E.hipThrustPause("5 × 10","100-110 lb"),E.singleLegRDL("4 × 10 each","25-30 lb"),E.rearFootElevated("4 × 10 each","23-28 lb"),E.cableKickbackHeavy("4 × 15 each","Heavy-max cable"),E.abductionDrop("4 × 20 + drop","Heavy")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"),E.bandedKickbackHold("5 × 15 each","Heaviest band + ankle weight"),E.lateralWalk("4 × 20 steps each way","Heaviest band")]},1:{gym:[E.sumoDLHeavy("5 × 10","95-108 lb"),E.abductionDrop("4 × 20 + drop","Heavy"),E.cableKickbackHeavy("4 × 15 each","Heavy-max cable"),E.sumoGobletPause("5 × 15","35-40 lb"),E.singleLegBridgeWeighted("4 × 15 each","BW + 20-25 lb")],home:[E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("5 × 15 each","Heaviest band + ankle weight"),E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"),E.clamshell("4 × 20 each","Heaviest band"),E.singleLegBridgeWeighted("4 × 15 each","Heaviest dumbbell on hip")]},2:{gym:[E.hipThrustPause("5 × 10","105-115 lb"),E.legPressPeak("5 × 15","183-200 lb"),E.cableKickbackHeavy("4 × 15 each","Heavy-max cable"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.frogPumpWeighted("3 × 30","Heavy-max plate")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"),E.frogPumpWeighted("3 × 30","Heaviest dumbbell")]}};
+WEEKS[12]={0:{gym:[E.hipThrustPause("5 × 10","108-115 lb"),E.rearFootElevated("4 × 10 each","25-30 lb"),E.singleLegRDL("4 × 10 each","27-32 lb"),E.abductionDrop("4 × 20 + drop","Heavy-max"),E.cableKickbackHeavy("5 × 15 each","Max cable")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"),E.donkeyKickHeavy("4 × 15 each","Heaviest ankle weight + band"),E.lateralWalk("4 × 20 steps each way","Heaviest band")]},1:{gym:[E.sumoDLHeavy("5 × 10","100-112 lb"),E.cableKickbackHeavy("5 × 15 each","Max cable"),E.abductionDrop("4 × 20 + drop","Heavy-max"),E.sumoGobletPause("5 × 15","38-45 lb"),E.singleLegBridgeWeighted("4 × 15 each","BW + 22-27 lb")],home:[E.donkeyKickHeavy("5 × 15 each","Heaviest ankle weight + band"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"),E.clamshell("4 × 20 each","Heaviest band"),E.singleLegBridgeWeighted("4 × 15 each","Heaviest dumbbell on hip")]},2:{gym:[E.hipThrustPause("5 × 10","110-120 lb"),E.legPressPeak("5 × 15","190-210 lb"),E.cableKickbackHeavy("5 × 15 each","Max cable"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.frogPumpWeighted("3 × 30","Max plate")],home:[E.gluteBridgePulse("5 × 10 + 10 pulses","Heaviest band + heaviest dumbbell"),E.bwSumoTempo("5 × 12","Band + heaviest dumbbell"),E.bandedKickbackHold("5 × 15 each","Heaviest band + heaviest ankle weight"),E.lateralWalk("4 × 20 steps each way","Heaviest band"),E.frogPumpWeighted("3 × 30","Heaviest dumbbell — close the program! 🍑")]}};
 
 var TIPS=[
   {emoji:"🍑",title:"Progressive Overload",body:"Every 1-2 weeks, add 5 lbs or a heavier band, or 2 reps. Glutes need to be challenged to grow."},
@@ -330,9 +127,6 @@ var TIPS=[
 ];
 </script>
 
-<!-- ═══════════════════════════════════════════════════════════
-     REACT APP
-════════════════════════════════════════════════════════════ -->
 <script>
 var useState=React.useState,useEffect=React.useEffect;
 
@@ -349,12 +143,14 @@ function calcCurrentWeek(){
   return Math.min(Math.max(Math.floor(diff/7)+1,1),12);
 }
 function weekToPhaseLabel(w){if(w<=4)return"Weeks 1–4 · Foundation";if(w<=8)return"Weeks 5–8 · Build";return"Weeks 9–12 · Peak";}
-function weekToColor(w){if(w<=4)return'#7c3aed';if(w<=8)return'#059669';return'#db2777';}
+function weekToColor(w){if(w<=4)return'#7c3aed';if(w<=8)return'#059669';return'#db2877';}
 
 function safeGet(k){try{return localStorage.getItem(k);}catch(e){try{return sessionStorage.getItem(k);}catch(e2){return null;}}}
 function safeSet(k,v){try{localStorage.setItem(k,v);}catch(e){try{sessionStorage.setItem(k,v);}catch(e2){}}}
 function safeRemove(k){try{localStorage.removeItem(k);}catch(e){try{sessionStorage.removeItem(k);}catch(e2){}}}
 function safeKeys(p){var ks=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith(p))ks.push(k);}}catch(e){try{for(var i=0;i<sessionStorage.length;i++){var k=sessionStorage.key(i);if(k&&k.startsWith(p))ks.push(k);}}catch(e2){}}return ks;}
+
+function ytUrl(name){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(name+' exercise how to');}
 
 function CalendarPicker(props){
   var t=todayStr(),iY=parseInt(props.activeDate.slice(0,4)),iM=parseInt(props.activeDate.slice(5,7))-1;
@@ -478,6 +274,8 @@ function Card(props){
     ),
     React.createElement('div',{style:{fontSize:12,color:'#9ca3af',lineHeight:1.5,marginBottom:8}},ex.notes),
     React.createElement('div',{style:{background:'#0a0010',borderRadius:8,padding:'6px 10px',fontSize:11,color:'#c084fc',fontStyle:'italic',marginBottom:10}},'💡 '+ex.tip),
+    // YouTube button
+    React.createElement('a',{href:ytUrl(ex.name),target:'_blank',className:'yt-btn'},'▶ Watch Example on YouTube'),
     React.createElement('div',{style:{display:'flex',gap:8,marginBottom:8}},
       React.createElement('button',{onClick:props.onExpand,style:{flex:1,background:isOpen?'#3b0764':'#0a0010',border:'1px solid #3b0764',borderRadius:8,padding:'6px 14px',fontSize:12,color:'#a78bfa',fontWeight:700,cursor:'pointer'}},isOpen?'▲ Hide How To':'▼ How To'),
       React.createElement('button',{onClick:props.onToggleLog,style:{flex:1,background:showLog?'#7c3aed':'#0a0010',border:'1px solid #7c3aed',borderRadius:8,padding:'6px 14px',fontSize:12,color:showLog?'white':'#c084fc',fontWeight:700,cursor:'pointer'}},showLog?'▲ Hide Log':'📝 Log')
@@ -505,7 +303,6 @@ function App(){
   var hr=useState(0),histRefresh=hr[0],setHistRefresh=hr[1];
   var ld=useState(todayStr()),logDate=ld[0],setLogDate=ld[1];
   var sc=useState(false),showCal=sc[0],setShowCal=sc[1];
-  var wp=useState(false),showWeekPicker=wp[0],setShowWeekPicker=wp[1];
 
   var isLog=mainTab==='log',isTips=!isLog&&tab===3,isWarmup=!isLog&&!isTips&&tab===4;
   var isHome=mode==='home';
@@ -575,7 +372,6 @@ function App(){
         })
       ),
 
-      // Week selector
       React.createElement('div',{style:{marginBottom:14}},
         React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
           React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'#6b7280',letterSpacing:1}},'WEEK'),
