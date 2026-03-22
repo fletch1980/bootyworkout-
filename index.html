@@ -421,6 +421,16 @@ function App(){
     !isLog&&React.createElement('div',null,
       getRestDayNotice()&&isToday&&React.createElement('div',{style:{background:'#1a0030',border:'1px solid #7c3aed',borderRadius:10,padding:'10px 14px',fontSize:12,color:'#c084fc',fontWeight:600,marginBottom:12,textAlign:'center'}},'😴 '+getRestDayNotice()),
 
+      React.createElement('div',{style:{marginBottom:14}},
+        React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'#6b7280',letterSpacing:1,marginBottom:6}},'WEEK'),
+        React.createElement('div',{style:{display:'flex',gap:4,flexWrap:'wrap'}},
+          [1,2,3,4,5,6,7,8,9,10,11,12].map(function(w){
+            var isAuto=w===currentWeek;
+            return React.createElement('button',{key:w,onClick:function(){},style:{width:'calc(25% - 3px)',padding:'7px 2px',borderRadius:8,border:isAuto?'2px solid #c084fc':'1px solid #3b0764',cursor:'default',fontSize:11,fontWeight:700,background:isAuto?weekToColor(currentWeek):'#1a0030',color:isAuto?'white':'#9ca3af'}},'Wk '+w);
+          })
+        )
+      ),
+
       React.createElement('div',{style:{display:'flex',background:'#1a0030',borderRadius:10,padding:4,marginBottom:12,gap:4}},
         React.createElement('button',{onClick:function(){setMode('gym');setChecked({});},style:{flex:1,padding:'8px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,background:!isHome?'#7c3aed':'transparent',color:!isHome?'white':'#9ca3af'}},'🏋️ Gym'),
         React.createElement('button',{onClick:function(){setMode('home');setChecked({});},style:{flex:1,padding:'8px 4px',borderRadius:8,border:'none',cursor:'pointer',fontSize:11,fontWeight:700,background:isHome?'#059669':'transparent',color:isHome?'white':'#9ca3af'}},'🏠 At Home')
