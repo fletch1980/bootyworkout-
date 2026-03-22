@@ -42,7 +42,8 @@
     .phase-badge{display:inline-block;color:white;font-size:10px;font-weight:800;border-radius:20px;padding:3px 10px;letter-spacing:1px;}
     .week-badge{display:inline-block;background:#1a0030;border:1px solid #7c3aed;color:#c084fc;font-size:10px;font-weight:800;border-radius:20px;padding:3px 10px;margin-left:6px;}
     .yt-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#ff0000;border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:8px 12px;cursor:pointer;margin-bottom:10px;text-decoration:none;}
-    .yt-btn:hover{background:#cc0000;}
+    .prog-bar-wrap{background:rgba(255,255,255,0.15);border-radius:20px;height:6px;overflow:hidden;margin-top:6px;}
+    .prog-bar{height:100%;border-radius:20px;background:rgba(255,255,255,0.9);transition:width 0.4s;}
   </style>
 </head>
 <body>
@@ -50,6 +51,8 @@
 
 <script>
 var PROGRAM_START = "2026-03-09";
+var SESSIONS_TO_ADVANCE = 3;
+var STORAGE_PREFIX = 'bbb_';
 
 function ex(name,area,emoji,sets,weights,notes,tip,howto){
   return {name:name,area:area,emoji:emoji,sets:sets,weights:weights,notes:notes,tip:tip,howto:howto};
@@ -136,12 +139,6 @@ function friendlyDate(iso){return new Date(iso+'T12:00:00').toLocaleDateString('
 function getInitialTab(){var d=localDay();if(d===1)return 0;if(d===3)return 1;if(d===5)return 2;return 0;}
 function getRestDayNotice(){var d=localDay();if(d===2)return"Today is Tuesday — next glute day is Wednesday!";if(d===4)return"Today is Thursday — next glute day is Friday!";if(d===6||d===0)return"Rest day! Next glute day is Monday.";return null;}
 function parseSets(s){if(!s)return 3;var m=s.match(/^(\d+)/);return m?Math.min(parseInt(m[1]),6):3;}
-
-function calcCurrentWeek(){
-  var start=new Date(PROGRAM_START+'T00:00:00'),now=new Date();
-  var diff=Math.floor((now-start)/(1000*60*60*24));
-  return Math.min(Math.max(Math.floor(diff/7)+1,1),12);
-}
 function weekToPhaseLabel(w){if(w<=4)return"Weeks 1–4 · Foundation";if(w<=8)return"Weeks 5–8 · Build";return"Weeks 9–12 · Peak";}
 function weekToColor(w){if(w<=4)return'#7c3aed';if(w<=8)return'#059669';return'#db2877';}
 
@@ -149,8 +146,58 @@ function safeGet(k){try{return localStorage.getItem(k);}catch(e){try{return sess
 function safeSet(k,v){try{localStorage.setItem(k,v);}catch(e){try{sessionStorage.setItem(k,v);}catch(e2){}}}
 function safeRemove(k){try{localStorage.removeItem(k);}catch(e){try{sessionStorage.removeItem(k);}catch(e2){}}}
 function safeKeys(p){var ks=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith(p))ks.push(k);}}catch(e){try{for(var i=0;i<sessionStorage.length;i++){var k=sessionStorage.key(i);if(k&&k.startsWith(p))ks.push(k);}}catch(e2){}}return ks;}
-
 function ytUrl(name){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(name+' exercise how to');}
+
+// --- SESSION-BASED WEEK DETECTION ---
+// Count unique dates logged for a given week number
+function getLoggedDatesForWeek(prefix, weekNum) {
+  var keys = safeKeys(prefix);
+  var dates = {};
+  keys.forEach(function(k) {
+    // key format: prefix_DATE_exercisename
+    var rest = k.slice(prefix.length);
+    var parts = rest.split('_');
+    var date = parts[0];
+    // only count if key has content
+    var val = safeGet(k);
+    if (val && val !== '[]') dates[date] = true;
+  });
+  // Now figure out which week each date belongs to — we store week in a separate index
+  // Simpler: store session dates per week in a dedicated key
+  var sessionKey = prefix + 'sessions_w' + weekNum;
+  var sessions = JSON.parse(safeGet(sessionKey) || '[]');
+  return sessions;
+}
+
+function recordSession(prefix, weekNum, dateStr) {
+  var sessionKey = prefix + 'sessions_w' + weekNum;
+  var sessions = JSON.parse(safeGet(sessionKey) || '[]');
+  if (sessions.indexOf(dateStr) === -1) {
+    sessions.push(dateStr);
+    safeSet(sessionKey, JSON.stringify(sessions));
+  }
+}
+
+function calcWeekFromSessions(prefix, target) {
+  var week = 1;
+  for (var w = 1; w <= 12; w++) {
+    var sessionKey = prefix + 'sessions_w' + w;
+    var sessions = JSON.parse(safeGet(sessionKey) || '[]');
+    if (sessions.length >= target) {
+      if (w < 12) week = w + 1;
+      else week = 12;
+    } else {
+      week = w;
+      break;
+    }
+  }
+  return week;
+}
+
+function getSessionsThisWeek(prefix, weekNum) {
+  var sessionKey = prefix + 'sessions_w' + weekNum;
+  return JSON.parse(safeGet(sessionKey) || '[]');
+}
 
 function CalendarPicker(props){
   var t=todayStr(),iY=parseInt(props.activeDate.slice(0,4)),iM=parseInt(props.activeDate.slice(5,7))-1;
@@ -189,10 +236,12 @@ function LogForm(props){
     var filled=rows.filter(function(r){return r.reps||r.weight;});
     if(!filled.length)return;
     setSaving(true);
-    var key='bbb_'+(props.logDate||todayStr())+'_'+props.exName.replace(/\s+/g,'-');
+    var key=STORAGE_PREFIX+(props.logDate||todayStr())+'_'+props.exName.replace(/\s+/g,'-');
     var ex=JSON.parse(safeGet(key)||'[]'),ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     filled.forEach(function(r,i){ex.push({set:i+1,reps:r.reps,weight:r.weight,time:ts});});
     safeSet(key,JSON.stringify(ex));
+    // Record session for week progression
+    recordSession(STORAGE_PREFIX, props.currentWeek, props.logDate||todayStr());
     var reset=[];for(var i=0;i<nr;i++)reset.push(mk());
     setRows(reset);setSaving(false);props.onSaved();
   }
@@ -220,8 +269,9 @@ function HistoryView(){
   var rf=useState(0),setRf=rf[1];rf=rf[0];
   var op=useState({}),openD=op[0],setOpenD=op[1];
   useEffect(function(){
-    var keys=safeKeys('bbb_'),byDate={};
-    keys.forEach(function(k){var pts=k.replace('bbb_','').split('_'),date=pts[0],ex=pts.slice(1).join(' ').replace(/-/g,' ');var entries=JSON.parse(safeGet(k)||'[]');if(!byDate[date])byDate[date]={};byDate[date][ex]=entries;});
+    var keys=safeKeys(STORAGE_PREFIX).filter(function(k){return k.indexOf('sessions_')===-1;});
+    var byDate={};
+    keys.forEach(function(k){var pts=k.replace(STORAGE_PREFIX,'').split('_'),date=pts[0],ex=pts.slice(1).join(' ').replace(/-/g,' ');var entries=JSON.parse(safeGet(k)||'[]');if(!byDate[date])byDate[date]={};byDate[date][ex]=entries;});
     setData(byDate);
   },[rf]);
   function del(key,idx){var e=JSON.parse(safeGet(key)||'[]');e.splice(idx,1);if(e.length){safeSet(key,JSON.stringify(e));}else{safeRemove(key);}setRf(function(x){return x+1;});}
@@ -239,7 +289,7 @@ function HistoryView(){
       ),
       isOpen&&React.createElement('div',{style:{padding:'10px 14px'}},
         Object.keys(exs).map(function(ex){
-          var entries=exs[ex],lk='bbb_'+date+'_'+ex.replace(/\s+/g,'-');
+          var entries=exs[ex],lk=STORAGE_PREFIX+date+'_'+ex.replace(/\s+/g,'-');
           return React.createElement('div',{key:ex,className:'hist-block'},
             React.createElement('div',{style:{color:'#c084fc',fontWeight:700,fontSize:11,marginBottom:4}},ex),
             entries.map(function(e,idx){var ci=idx,ck=lk;
@@ -274,7 +324,6 @@ function Card(props){
     ),
     React.createElement('div',{style:{fontSize:12,color:'#9ca3af',lineHeight:1.5,marginBottom:8}},ex.notes),
     React.createElement('div',{style:{background:'#0a0010',borderRadius:8,padding:'6px 10px',fontSize:11,color:'#c084fc',fontStyle:'italic',marginBottom:10}},'💡 '+ex.tip),
-    // YouTube button
     React.createElement('a',{href:ytUrl(ex.name),target:'_blank',className:'yt-btn'},'▶ Watch Example on YouTube'),
     React.createElement('div',{style:{display:'flex',gap:8,marginBottom:8}},
       React.createElement('button',{onClick:props.onExpand,style:{flex:1,background:isOpen?'#3b0764':'#0a0010',border:'1px solid #3b0764',borderRadius:8,padding:'6px 14px',fontSize:12,color:'#a78bfa',fontWeight:700,cursor:'pointer'}},isOpen?'▲ Hide How To':'▼ How To'),
@@ -286,16 +335,14 @@ function Card(props){
         React.createElement('span',{style:{color:'#e2e8f0',fontSize:12,lineHeight:1.5}},step)
       );})
     ),
-    showLog&&React.createElement(LogForm,{exName:ex.name,logDate:props.logDate,sets:ex.sets,onSaved:props.onLogSaved})
+    showLog&&React.createElement(LogForm,{exName:ex.name,logDate:props.logDate,sets:ex.sets,currentWeek:props.currentWeek,onSaved:props.onLogSaved})
   );
 }
 
 function App(){
-  var curWeek=calcCurrentWeek();
+  var week = calcWeekFromSessions(STORAGE_PREFIX, SESSIONS_TO_ADVANCE);
   var t=useState(getInitialTab),tab=t[0],setTab=t[1];
   var m=useState('gym'),mode=m[0],setMode=m[1];
-  var wk=useState(curWeek),week=wk[0],setWeek=wk[1];
-  var ov=useState(false),overridden=ov[0],setOverridden=ov[1];
   var c=useState({}),checked=c[0],setChecked=c[1];
   var e=useState({}),expanded=e[0],setExpanded=e[1];
   var lg=useState({}),logOpen=lg[0],setLogOpen=lg[1];
@@ -303,15 +350,21 @@ function App(){
   var hr=useState(0),histRefresh=hr[0],setHistRefresh=hr[1];
   var ld=useState(todayStr()),logDate=ld[0],setLogDate=ld[1];
   var sc=useState(false),showCal=sc[0],setShowCal=sc[1];
+  var rf=useState(0),refresh=rf[0],setRefresh=rf[1];
+
+  // recalc week after logging
+  var currentWeek = calcWeekFromSessions(STORAGE_PREFIX, SESSIONS_TO_ADVANCE);
+  var sessions = getSessionsThisWeek(STORAGE_PREFIX, currentWeek);
+  var sessionCount = sessions.length;
 
   var isLog=mainTab==='log',isTips=!isLog&&tab===3,isWarmup=!isLog&&!isTips&&tab===4;
   var isHome=mode==='home';
-  var dayData=WEEKS[week]&&!isTips&&!isWarmup?WEEKS[week][tab]:null;
+  var dayData=WEEKS[currentWeek]&&!isTips&&!isWarmup?WEEKS[currentWeek][tab]:null;
   var exs=isWarmup?WARMUP:(dayData?(isHome?dayData.home:dayData.gym):[]);
   var isToday=logDate===todayStr();
-  var done=exs.filter(function(_,i){return!!checked[mode+'-'+tab+'-'+week+'-'+i];}).length;
+  var done=exs.filter(function(_,i){return!!checked[mode+'-'+tab+'-'+currentWeek+'-'+i];}).length;
   var pct=exs.length?(done/exs.length)*100:0;
-  var phaseColor=weekToColor(week);
+  var phaseColor=weekToColor(currentWeek);
 
   function ck(k){setChecked(function(p){var n=Object.assign({},p);n[k]=!p[k];return n;});}
   function ek(k){setExpanded(function(p){var n=Object.assign({},p);n[k]=!p[k];return n;});}
@@ -327,12 +380,20 @@ function App(){
       React.createElement('div',{style:{fontSize:22,fontWeight:800}},'🍑 Bubble Butt Builder'),
       React.createElement('div',{style:{fontSize:13,opacity:0.9,marginTop:2}},isHome?'🏠 At Home · Bands & Bodyweight':'Mon · Wed · Fri · 12-Week Glute Growth'),
       React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,marginTop:8,flexWrap:'wrap'}},
-        React.createElement('span',{className:'phase-badge',style:{background:phaseColor}},weekToPhaseLabel(week)),
-        React.createElement('span',{className:'week-badge'},'Week '+week+' of 12'),
-        overridden&&React.createElement('span',{style:{fontSize:10,color:'rgba(255,255,255,0.6)'}},'(manual)')
+        React.createElement('span',{className:'phase-badge',style:{background:phaseColor}},weekToPhaseLabel(currentWeek)),
+        React.createElement('span',{className:'week-badge'},'Week '+currentWeek+' of 12')
+      ),
+      // Session progress indicator
+      React.createElement('div',{style:{marginTop:10}},
+        React.createElement('div',{style:{fontSize:11,opacity:0.85,marginBottom:4}},
+          sessionCount+' of '+SESSIONS_TO_ADVANCE+' sessions done this week'+(sessionCount>=SESSIONS_TO_ADVANCE?' · ✅ Advancing next session!':'')
+        ),
+        React.createElement('div',{className:'prog-bar-wrap'},
+          React.createElement('div',{className:'prog-bar',style:{width:Math.min(100,Math.round(sessionCount/SESSIONS_TO_ADVANCE*100))+'%'}})
+        )
       ),
       !isTips&&!isLog&&React.createElement('div',null,
-        React.createElement('div',{style:{marginTop:10,background:'rgba(255,255,255,0.25)',borderRadius:8,height:8}},
+        React.createElement('div',{style:{marginTop:8,background:'rgba(255,255,255,0.25)',borderRadius:8,height:8}},
           React.createElement('div',{style:{background:'white',borderRadius:8,height:8,width:pct+'%',transition:'width 0.3s'}})
         ),
         React.createElement('div',{style:{fontSize:12,opacity:0.85,marginTop:4}},done+' of '+exs.length+' complete'+(done===exs.length&&exs.length>0?' 🔥 DONE!':''))
@@ -372,31 +433,17 @@ function App(){
         })
       ),
 
-      React.createElement('div',{style:{marginBottom:14}},
-        React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}},
-          React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'#6b7280',letterSpacing:1}},'WEEK'),
-          React.createElement('div',{style:{fontSize:10,color:'#6b7280',fontStyle:'italic'}},overridden?'manual override':'auto: week '+curWeek)
-        ),
-        React.createElement('div',{style:{display:'flex',gap:4,flexWrap:'wrap'}},
-          [1,2,3,4,5,6,7,8,9,10,11,12].map(function(w){
-            var isAuto=!overridden&&w===curWeek;
-            return React.createElement('button',{key:w,onClick:function(){setWeek(w);setOverridden(w!==curWeek);setChecked({});},style:{width:'calc(25% - 3px)',padding:'7px 2px',borderRadius:8,border:isAuto?'2px solid #c084fc':'1px solid #3b0764',cursor:'pointer',fontSize:11,fontWeight:700,background:week===w?phaseColor:'#1a0030',color:week===w?'white':'#9ca3af'}},'Wk '+w);
-          })
-        ),
-        overridden&&React.createElement('button',{onClick:function(){setWeek(curWeek);setOverridden(false);setChecked({});},style:{marginTop:6,background:'none',border:'1px solid #6b7280',borderRadius:6,color:'#9ca3af',fontSize:11,padding:'4px 10px',cursor:'pointer',width:'100%'}},'↩ Reset to auto (Week '+curWeek+')')
-      ),
-
-      !isTips&&!isWarmup&&dayData&&React.createElement('div',{key:mode+'-'+tab+'-'+week},
+      !isTips&&!isWarmup&&dayData&&React.createElement('div',{key:mode+'-'+tab+'-'+currentWeek},
         React.createElement('div',{style:{background:'#1a0030',borderRadius:8,padding:'10px 14px',fontSize:12,color:isHome?'#4ade80':'#a78bfa',marginBottom:14,fontWeight:600}},
-          ['🔥 Power Day','🔥 Burnout Day','🍑 Full Glute Day'][tab]+' · Week '+week+' · '+(isHome?'🏠 At Home':'🏋️ Gym')
+          ['🔥 Power Day','🔥 Burnout Day','🍑 Full Glute Day'][tab]+' · Week '+currentWeek+' · '+(isHome?'🏠 At Home':'🏋️ Gym')
         ),
         exs.map(function(ex,i){
-          var ck_='mode'+mode+'tab'+tab+'wk'+week+'i'+i;
-          return React.createElement(Card,{key:ck_,ex:ex,isDone:!!checked[ck_],isOpen:!!expanded[ck_+'e'],showLog:!!logOpen[ck_+'l'],logDate:logDate,
+          var ck_='mode'+mode+'tab'+tab+'wk'+currentWeek+'i'+i;
+          return React.createElement(Card,{key:ck_,ex:ex,isDone:!!checked[ck_],isOpen:!!expanded[ck_+'e'],showLog:!!logOpen[ck_+'l'],logDate:logDate,currentWeek:currentWeek,
             onCheck:function(){ck(ck_);},
             onExpand:function(){ek(ck_+'e');},
             onToggleLog:function(){lk(ck_+'l');},
-            onLogSaved:function(){setHistRefresh(function(x){return x+1;});}
+            onLogSaved:function(){setHistRefresh(function(x){return x+1;});setRefresh(function(x){return x+1;});}
           });
         })
       ),
@@ -405,11 +452,11 @@ function App(){
         React.createElement('div',{style:{background:'#1a0030',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#a78bfa',marginBottom:14,fontWeight:600}},'🌡️ Activation · Before EVERY session · 8-10 min'),
         WARMUP.map(function(ex,i){
           var ck_='warmup'+i;
-          return React.createElement(Card,{key:ck_,ex:ex,isDone:!!checked[ck_],isOpen:!!expanded[ck_+'e'],showLog:!!logOpen[ck_+'l'],logDate:logDate,
+          return React.createElement(Card,{key:ck_,ex:ex,isDone:!!checked[ck_],isOpen:!!expanded[ck_+'e'],showLog:!!logOpen[ck_+'l'],logDate:logDate,currentWeek:currentWeek,
             onCheck:function(){ck(ck_);},
             onExpand:function(){ek(ck_+'e');},
             onToggleLog:function(){lk(ck_+'l');},
-            onLogSaved:function(){setHistRefresh(function(x){return x+1;});}
+            onLogSaved:function(){setHistRefresh(function(x){return x+1;});setRefresh(function(x){return x+1;});}
           });
         })
       ),
